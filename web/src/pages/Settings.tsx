@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
+import { BlockedDaysCard } from '../components/BlockedDays'
 import { PageHeader } from '../components/Layout'
 import { Avatar, Button, Card, ConfirmButton, cx, ErrorText, Field, Icon, inputCls, Segmented } from '../components/ui'
 import { api } from '../lib/api'
@@ -24,7 +25,7 @@ export function SettingsPage() {
   }
   return (
     <>
-      <PageHeader title="Configurações" subtitle="Aparência, acessos, permissões da gestora e categorias." />
+      <PageHeader title="Configurações" subtitle="Aparência, dias bloqueados, acessos, permissões da gestora e categorias." />
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-6">
           <Appearance />
@@ -32,6 +33,7 @@ export function SettingsPage() {
           <Invites />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
+          <BlockedDaysCard />
           <Permissions />
           <Categories />
           <Backup />

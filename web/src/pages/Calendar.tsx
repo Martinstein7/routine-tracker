@@ -5,7 +5,7 @@ import { TaskForm } from '../components/TaskForm'
 import { Button, cx, Icon, Segmented } from '../components/ui'
 import { addDays, addMonths, endOfMonth, formatDayMonth, formatMonth, formatWeekday, parseISO, startOfMonth, startOfWeek, statusMeta, todayISO } from '../lib/format'
 import { useOwner } from '../lib/owner'
-import { useTasks } from '../lib/queries'
+import { useBlockedDays, useTasks } from '../lib/queries'
 import type { Task } from '../types'
 
 type View = 'week' | 'month'
@@ -21,6 +21,7 @@ export function CalendarPage() {
   const from = view === 'week' ? weekStart : startOfWeek(startOfMonth(anchor))
   const to = view === 'week' ? addDays(weekStart, 6) : addDays(startOfWeek(endOfMonth(anchor)), 6)
   const tasks = useTasks(from, to, ownerId)
+  const { reasonOf } = useBlockedDays()
   const byDay = new Map<string, Task[]>()
   for (const t of tasks.data ?? []) byDay.set(t.date, [...(byDay.get(t.date) ?? []), t])
 
@@ -90,16 +91,25 @@ export function CalendarPage() {
 
       {view === 'week' ? (
         <div className="grid gap-3 md:grid-cols-7">
-          {Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).map((d) => (
-            <section key={d} className={cx('flex min-w-0 flex-col rounded-lg border bg-surface', d === today ? 'border-accent/40' : 'border-line')}>
+          {Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).map((d) => {
+            const blocked = reasonOf(d)
+            return (
+            <section key={d} className={cx('flex min-w-0 flex-col rounded-lg border', blocked ? 'bg-canvas' : 'bg-surface', d === today ? 'border-accent/40' : 'border-line')}>
               <header className="flex items-center justify-between border-b border-line px-3 py-2">
-                <div>
+                <div className="min-w-0">
                   <p className={cx('text-xs', d === today ? 'font-semibold text-accent' : 'text-muted')}>{formatWeekday(d)}</p>
                   <p className="text-sm font-semibold tabular">{parseISO(d).getDate()}</p>
                 </div>
-                <button type="button" onClick={() => setEditing({ date: d })} className="rounded p-1 text-faint hover:bg-canvas hover:text-ink" aria-label={`Nova tarefa em ${formatDayMonth(d)}`}>
-                  <Icon name="plus" className="size-3.5" />
-                </button>
+                {blocked ? (
+                  <span className="inline-flex min-w-0 items-center gap-1 text-[11px] text-muted" title="Dia bloqueado">
+                    <Icon name="block" className="size-3" />
+                    <span className="truncate">{blocked}</span>
+                  </span>
+                ) : (
+                  <button type="button" onClick={() => setEditing({ date: d })} className="rounded p-1 text-faint hover:bg-canvas hover:text-ink" aria-label={`Nova tarefa em ${formatDayMonth(d)}`}>
+                    <Icon name="plus" className="size-3.5" />
+                  </button>
+                )}
               </header>
               <ul className="flex flex-1 flex-col gap-1 p-1.5 md:min-h-64">
                 {(byDay.get(d) ?? []).map((t) => (
@@ -115,7 +125,8 @@ export function CalendarPage() {
                 ))}
               </ul>
             </section>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-line bg-surface">
@@ -128,6 +139,7 @@ export function CalendarPage() {
             {Array.from({ length: Math.round((parseISO(to).getTime() - parseISO(from).getTime()) / 86_400_000) + 1 }, (_, i) => addDays(from, i)).map((d, i) => {
               const list = byDay.get(d) ?? []
               const outside = d.slice(0, 7) !== anchor.slice(0, 7)
+              const blocked = reasonOf(d)
               return (
                 <button
                   key={d}
@@ -136,7 +148,12 @@ export function CalendarPage() {
                     setAnchor(d)
                     setView('week')
                   }}
-                  className={cx('flex min-h-28 flex-col gap-1 border-line p-2 text-left hover:bg-canvas', i % 7 !== 6 && 'border-r', 'border-b', outside && 'bg-canvas/60')}
+                  className={cx(
+                    'flex min-h-28 flex-col gap-1 border-line p-2 text-left hover:bg-canvas',
+                    i % 7 !== 6 && 'border-r',
+                    'border-b',
+                    (outside || blocked) && 'bg-canvas/60',
+                  )}
                 >
                   <span
                     className={cx(
@@ -146,6 +163,12 @@ export function CalendarPage() {
                   >
                     {parseISO(d).getDate()}
                   </span>
+                  {blocked && (
+                    <span className="flex min-w-0 items-center gap-1 text-[11px] text-muted">
+                      <Icon name="block" className="size-3 shrink-0" />
+                      <span className="truncate">{blocked}</span>
+                    </span>
+                  )}
                   {list.slice(0, 3).map((t) => (
                     <span key={t.id} className="flex min-w-0 items-center gap-1.5 text-[11px]">
                       <span className={cx('size-1.5 shrink-0 rounded-full', statusMeta[t.status].dot)} />

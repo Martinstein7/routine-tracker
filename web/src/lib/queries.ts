@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import type { Category, Comment, Incident, OnDemandActivity, Recurrence, Task, TaskStatus, User } from '../types'
+import type { BlockedDays, Category, Comment, Incident, OnDemandActivity, Recurrence, Task, TaskStatus, User } from '../types'
 import { api, qs } from './api'
+import { parseISO } from './format'
 
 export const useUsers = () => useQuery({ queryKey: ['users'], queryFn: () => api.get<User[]>('/api/users') })
 
@@ -19,6 +20,19 @@ export const useOnDemand = (assigneeId?: string) =>
     queryKey: ['onDemand', assigneeId ?? 'all'],
     queryFn: () => api.get<OnDemandActivity[]>(`/api/on-demand${qs({ assigneeId })}`),
   })
+
+/** Dias sem rotina. `reasonOf` diz se uma data está bloqueada e por quê (undefined = livre). */
+export function useBlockedDays() {
+  const query = useQuery({ queryKey: ['blocked'], queryFn: () => api.get<BlockedDays>('/api/blocked-days') })
+  const byDate = new Map((query.data?.days ?? []).map((d) => [d.date, d.reason]))
+  const reasonOf = (date: string): string | undefined => {
+    const explicit = byDate.get(date)
+    if (explicit) return explicit
+    const wd = parseISO(date).getDay()
+    return query.data?.weekends && (wd === 0 || wd === 6) ? 'Fim de semana' : undefined
+  }
+  return { ...query, reasonOf }
+}
 
 /** Modo demonstração (npm run demo): sem login, dados fictícios que voltam ao padrão sozinhos. */
 export const useDemo = () =>
@@ -65,7 +79,7 @@ export type OnDemandInput = {
 function useRefreshTasks() {
   const qc = useQueryClient()
   return () => {
-    for (const key of ['tasks', 'onDemand', 'reports', 'history', 'comments', 'incidents']) qc.invalidateQueries({ queryKey: [key] })
+    for (const key of ['tasks', 'onDemand', 'blocked', 'reports', 'history', 'comments', 'incidents']) qc.invalidateQueries({ queryKey: [key] })
   }
 }
 
@@ -104,6 +118,13 @@ export function useTaskActions() {
       ...opts,
     }),
     removeOnDemand: useMutation({ mutationFn: (id: string) => api.del(`/api/on-demand/${id}`), ...opts }),
+    blockDays: useMutation({
+      mutationFn: (body: { from: string; to?: string; reason: string; removeTasks: boolean }) =>
+        api.post<{ blocked: number; removedTasks: number }>('/api/blocked-days', body),
+      ...opts,
+    }),
+    unblockDay: useMutation({ mutationFn: (date: string) => api.del(`/api/blocked-days/${date}`), ...opts }),
+    setWeekendsBlocked: useMutation({ mutationFn: (enabled: boolean) => api.put('/api/blocked-days/weekends', { enabled }), ...opts }),
     logOnDemand: useMutation({
       mutationFn: ({ id, mode }: { id: string; mode: 'start' | 'done' }) => api.post<Task>(`/api/on-demand/${id}/log`, { mode }),
       ...opts,

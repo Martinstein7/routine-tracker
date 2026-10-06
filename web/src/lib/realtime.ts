@@ -6,6 +6,7 @@ const dependents: Record<string, string[]> = {
   tasks: ['tasks', 'reports', 'onDemand'],
   onDemand: ['onDemand'],
   demo: ['demo'],
+  blocked: ['blocked', 'tasks'],
   comments: ['comments'],
   incidents: ['incidents', 'reports'],
   history: ['history'],

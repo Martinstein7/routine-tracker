@@ -56,6 +56,11 @@ export type OnDemandActivity = {
   lastTime: string | null
 }
 
+export type BlockedDays = {
+  weekends: boolean
+  days: { date: string; reason: string; createdBy: string }[]
+}
+
 export type Comment = { id: string; taskId: string; body: string; createdAt: string; author: UserSummary }
 
 export type Incident = {

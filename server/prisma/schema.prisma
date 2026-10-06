@@ -53,6 +53,7 @@ model User {
   incidents      Incident[]
   events         HistoryEvent[]
   invitesCreated Invite[]
+  blockedDays    BlockedDay[]
 }
 
 // Link de criação de conta. Só o hash do token fica salvo.
@@ -199,6 +200,22 @@ model HistoryEvent {
   editedAt  DateTime?
 
   @@index([createdAt])
+}
+
+// Dia sem rotina (consulta, feriado, folga…): não aceita tarefas nem gera as recorrentes.
+// Só o admin cria ou remove. Datas como "AAAA-MM-DD".
+model BlockedDay {
+  date        String   @id
+  reason      String
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+// Ajustes gerais do sistema, como "bloquear fins de semana".
+model Setting {
+  key   String @id
+  value Json
 }
 
 // Permissões opcionais (⚪) da gestora, liberadas pelo admin.

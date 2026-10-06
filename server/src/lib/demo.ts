@@ -21,7 +21,7 @@ let timer: NodeJS.Timeout | undefined
 
 export const demoStatus = () => ({ demo: env.demo, resetAt: resetAt?.toISOString() ?? null })
 
-const ALL_TOPICS: Topic[] = ['tasks', 'onDemand', 'comments', 'incidents', 'history', 'categories', 'users', 'permissions', 'demo']
+const ALL_TOPICS: Topic[] = ['tasks', 'onDemand', 'comments', 'incidents', 'history', 'categories', 'users', 'permissions', 'blocked', 'demo']
 
 /** Chamado depois de cada alteração bem-sucedida: agenda a volta ao padrão, se ainda não houver uma agendada. */
 export function scheduleReset(log: (msg: string) => void) {
@@ -104,6 +104,8 @@ export async function seedDemo() {
     prisma.onDemandActivity.deleteMany(),
     prisma.invite.deleteMany(),
     prisma.managerPermission.deleteMany(),
+    prisma.blockedDay.deleteMany(),
+    prisma.setting.deleteMany(),
     prisma.user.deleteMany(),
     prisma.category.deleteMany(),
   ])

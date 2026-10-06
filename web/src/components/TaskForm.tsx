@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth, useMe } from '../lib/auth'
 import { formatDate, nowHM, recurrenceLabel, todayISO } from '../lib/format'
-import { useCategories, useTaskActions, useUsers, type TaskInput } from '../lib/queries'
+import { useBlockedDays, useCategories, useTaskActions, useUsers, type TaskInput } from '../lib/queries'
 import type { Priority, Recurrence, Task } from '../types'
 import { Button, ConfirmButton, ErrorText, Field, inputCls, Modal, Segmented } from './ui'
 
@@ -45,6 +45,9 @@ export function TaskForm({ task, defaults, onClose }: Props) {
   const effectiveAssignee = assignees.some((u) => u.id === assigneeId) ? assigneeId : (assignees[0]?.id ?? '')
   const categoryLocked = editing && !can('tasks.changeCategory')
   const busy = actions.create.isPending || actions.update.isPending
+  // Dia bloqueado: não aceita tarefa nova nem mudança para essa data.
+  const blockedReason = useBlockedDays().reasonOf(date)
+  const dateBlocked = !!blockedReason && (!task || task.date !== date)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -95,7 +98,7 @@ export function TaskForm({ task, defaults, onClose }: Props) {
             </span>
           )}
           <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" form="task-form" variant="primary" disabled={busy}>
+          <Button type="submit" form="task-form" variant="primary" disabled={busy || dateBlocked}>
             {busy ? 'Salvando…' : 'Salvar'}
           </Button>
         </>
@@ -120,6 +123,13 @@ export function TaskForm({ task, defaults, onClose }: Props) {
             <input id="tf-end" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
           </Field>
         </div>
+
+        {dateBlocked && (
+          <p role="alert" className="-mt-1 rounded-md bg-warn-soft px-3 py-2 text-[13px]">
+            {formatDate(date)} está bloqueado ({blockedReason}). Escolha outra data
+            {me.role === 'ADMIN' ? ' ou desbloqueie em Configurações → Dias bloqueados.' : '.'}
+          </p>
+        )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Categoria" htmlFor="tf-cat" hint={categoryLocked ? 'Só o admin altera a categoria.' : undefined}>

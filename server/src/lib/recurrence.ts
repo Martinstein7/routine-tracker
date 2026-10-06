@@ -1,5 +1,6 @@
 import { prisma } from '../db.ts'
 import type { RecurringRule } from '../generated/prisma/client.ts'
+import { blockedDates } from './blocked.ts'
 import { daysBetween, weekday } from './dates.ts'
 
 export function occursOn(rule: Pick<RecurringRule, 'pattern' | 'weekday'>, date: string): boolean {
@@ -18,12 +19,13 @@ export async function materialize(from: string, to: string) {
       OR: [{ endDate: null }, { endDate: { gte: from } }],
     },
   })
+  const blocked = await blockedDates(from, to)
   const data = []
   for (const rule of rules) {
     const start = rule.startDate > from ? rule.startDate : from
     const end = rule.endDate && rule.endDate < to ? rule.endDate : to
     for (const date of daysBetween(start, end)) {
-      if (!occursOn(rule, date)) continue
+      if (!occursOn(rule, date) || blocked.has(date)) continue
       data.push({
         title: rule.title,
         description: rule.description,

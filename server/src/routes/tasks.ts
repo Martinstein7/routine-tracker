@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../db.ts'
 import type { Prisma, Task, TaskStatus, User } from '../generated/prisma/client.ts'
 import { authenticate } from '../lib/auth.ts'
+import { assertNotBlocked } from '../lib/blocked.ts'
 import { DATE_RE, daysBetween, TIME_RE, today, weekday } from '../lib/dates.ts'
 import { badRequest, forbidden, notFound } from '../lib/errors.ts'
 import { record } from '../lib/history.ts'
@@ -121,6 +122,7 @@ export async function taskRoutes(app: FastifyInstance) {
     const body = createBody.parse(request.body)
     checkTimes(body.startTime, body.endTime)
     await assertCanAssign(me, body.assigneeId)
+    await assertNotBlocked(body.date)
 
     let ruleId: string | null = null
     if (body.recurrence) {
@@ -178,6 +180,7 @@ export async function taskRoutes(app: FastifyInstance) {
     const body = updateBody.parse(request.body)
     const task = await loadTask(request.params.id)
     checkTimes(body.startTime ?? task.startTime, body.endTime === undefined ? task.endTime : body.endTime)
+    if (body.date !== undefined && body.date !== task.date) await assertNotBlocked(body.date)
 
     const changes: { field: string; line: string }[] = []
     if (body.title !== undefined && body.title !== task.title) changes.push({ field: 'o título', line: `Título: ${task.title} → ${body.title}` })

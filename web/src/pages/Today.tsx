@@ -11,7 +11,7 @@ import { Button, Card, cx, Empty, Icon } from '../components/ui'
 import { useAuth, useMe } from '../lib/auth'
 import { addDays, formatLong, formatWeekday, greeting, isOverdue, relativeDay, startOfWeek, todayISO } from '../lib/format'
 import { useOwner } from '../lib/owner'
-import { useIncidents, useNow, useTasks } from '../lib/queries'
+import { useBlockedDays, useIncidents, useNow, useTasks } from '../lib/queries'
 import type { Task } from '../types'
 
 export function TodayPage() {
@@ -27,6 +27,7 @@ export function TodayPage() {
   const [incidentOpen, setIncidentOpen] = useState(false)
 
   const tasks = useTasks(date, date, ownerId)
+  const blockedReason = useBlockedDays().reasonOf(date)
   const incidents = useIncidents(date, date)
   const list = tasks.data ?? []
   const isToday = date === today
@@ -71,13 +72,28 @@ export function TodayPage() {
                 Imprevisto
               </Button>
             )}
-            <Button variant="primary" onClick={() => setEditing('new')}>
+            <Button
+              variant="primary"
+              onClick={() => setEditing('new')}
+              disabled={!!blockedReason}
+              title={blockedReason ? `Dia bloqueado (${blockedReason})` : undefined}
+            >
               <Icon name="plus" className="size-3.5" />
               Nova tarefa
             </Button>
           </>
         }
       />
+
+      {blockedReason && (
+        <div role="status" className="mb-6 flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3">
+          <Icon name="block" className="size-4 text-muted" />
+          <p className="text-sm">
+            <span className="font-medium">Dia bloqueado · {blockedReason}.</span>{' '}
+            <span className="text-muted">Não dá para adicionar rotina neste dia. {me.role === 'ADMIN' ? 'Para liberar, vá em Configurações → Dias bloqueados.' : ''}</span>
+          </p>
+        </div>
+      )}
 
       <section aria-label="Resumo do dia" className="mb-6 flex flex-col gap-4 rounded-lg border border-line bg-surface p-4 md:flex-row md:items-center">
         <dl className="grid flex-1 grid-cols-3 gap-4 sm:grid-cols-5">
@@ -108,7 +124,7 @@ export function TodayPage() {
             {tasks.isPending ? (
               <Empty>Carregando…</Empty>
             ) : list.length === 0 ? (
-              <Empty>Nenhuma atividade neste dia. Use “Nova tarefa” para adicionar a primeira.</Empty>
+              <Empty>{blockedReason ? `Sem rotina: dia bloqueado (${blockedReason}).` : 'Nenhuma atividade neste dia. Use “Nova tarefa” para adicionar a primeira.'}</Empty>
             ) : (
               <ol className="py-2">
                 {list.map((t, i) => (
@@ -149,7 +165,7 @@ export function TodayPage() {
 
         <div className="flex min-w-0 flex-col gap-6">
           {isToday && <CurrentActivity task={current} onEdit={setEditing} />}
-          {isToday && <OnDemandCard ownerId={ownerId} />}
+          {isToday && !blockedReason && <OnDemandCard ownerId={ownerId} />}
           <Comments task={selected} />
           <WeekSummary date={date} ownerId={ownerId} onPick={setDate} />
         </div>

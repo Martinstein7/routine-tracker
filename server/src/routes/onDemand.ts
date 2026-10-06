@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { prisma } from '../db.ts'
 import { authenticate } from '../lib/auth.ts'
+import { assertNotBlocked } from '../lib/blocked.ts'
 import { nowTime, today } from '../lib/dates.ts'
 import { notFound } from '../lib/errors.ts'
 import { record } from '../lib/history.ts'
@@ -96,6 +97,7 @@ export async function onDemandRoutes(app: FastifyInstance) {
     const { mode } = z.object({ mode: z.enum(['start', 'done']) }).parse(request.body)
     const activity = await loadActivity(request.params.id)
     await assertCanAssign(me, activity.assigneeId)
+    await assertNotBlocked(today())
     const now = new Date()
 
     const { task, paused } = await prisma.$transaction(async (tx) => {

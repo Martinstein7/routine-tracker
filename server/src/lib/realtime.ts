@@ -1,7 +1,7 @@
 import type { WebSocket } from 'ws'
 
 // Cada evento diz só o que mudou; o navegador busca os dados de novo.
-export type Topic = 'tasks' | 'onDemand' | 'comments' | 'incidents' | 'history' | 'categories' | 'users' | 'permissions' | 'demo'
+export type Topic = 'tasks' | 'onDemand' | 'comments' | 'incidents' | 'history' | 'categories' | 'users' | 'permissions' | 'blocked' | 'demo'
 
 const clients = new Set<WebSocket>()
 
