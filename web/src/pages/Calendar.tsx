@@ -26,6 +26,17 @@ export function CalendarPage() {
 
   const step = (dir: 1 | -1) => setAnchor(view === 'week' ? addDays(anchor, 7 * dir) : addMonths(anchor, dir))
   const title = view === 'week' ? `${formatDayMonth(weekStart)} – ${formatDayMonth(addDays(weekStart, 6))}` : formatMonth(anchor)
+  const unit = view === 'week' ? 'Semana' : 'Mês'
+
+  // Atalho para ir direto a um mês: os últimos 12, o atual e os próximos 6 (mais o que estiver na tela).
+  const anchorMonth = startOfMonth(anchor)
+  const months = Array.from({ length: 19 }, (_, i) => addMonths(today, i - 12))
+  if (!months.includes(anchorMonth)) months.push(anchorMonth)
+  months.sort()
+  const goToMonth = (month: string) => {
+    setAnchor(month.slice(0, 7) === today.slice(0, 7) ? today : month)
+    setView('month')
+  }
 
   return (
     <>
@@ -44,14 +55,28 @@ export function CalendarPage() {
                 { value: 'month', label: 'Mês' },
               ]}
             />
+            <select
+              aria-label="Ir para o mês"
+              title="Ir para o mês"
+              value={anchorMonth}
+              onChange={(e) => goToMonth(e.target.value)}
+              className="h-9 cursor-pointer rounded-md border border-line-strong bg-surface px-2.5 text-[13px] font-medium text-ink hover:bg-canvas focus:border-accent focus:outline-none"
+            >
+              {months.map((m) => (
+                <option key={m} value={m}>
+                  {formatMonth(m)}
+                  {m.slice(0, 7) === today.slice(0, 7) ? ' (atual)' : ''}
+                </option>
+              ))}
+            </select>
             <div className="flex items-center rounded-md border border-line-strong bg-surface">
-              <button type="button" onClick={() => step(-1)} className="p-2 text-muted hover:text-ink" aria-label="Anterior">
+              <button type="button" onClick={() => step(-1)} className="p-2 text-muted hover:text-ink" aria-label={`${unit} anterior`} title={`${unit} anterior`}>
                 <Icon name="left" />
               </button>
               <button type="button" onClick={() => setAnchor(today)} className="px-2 text-[13px] font-medium">
                 Hoje
               </button>
-              <button type="button" onClick={() => step(1)} className="p-2 text-muted hover:text-ink" aria-label="Próximo">
+              <button type="button" onClick={() => step(1)} className="p-2 text-muted hover:text-ink" aria-label={`Próxim${view === 'week' ? 'a' : 'o'} ${unit.toLowerCase()}`} title={`Próxim${view === 'week' ? 'a' : 'o'} ${unit.toLowerCase()}`}>
                 <Icon name="right" />
               </button>
             </div>
