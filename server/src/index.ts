@@ -43,6 +43,10 @@ app.setErrorHandler((error, request, reply) => {
   if (error instanceof HttpError) {
     return reply.status(error.status).send({ message: error.message })
   }
+  const status = (error as { statusCode?: number }).statusCode
+  if (status && status >= 400 && status < 500) {
+    return reply.status(status).send({ message: 'Requisição inválida.' })
+  }
   request.log.error(error)
   return reply.status(500).send({ message: 'Erro inesperado no servidor. Tente de novo.' })
 })

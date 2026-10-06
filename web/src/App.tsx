@@ -1,7 +1,10 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { Layout } from './components/Layout'
 import { useAuth } from './lib/auth'
+import { OwnerProvider } from './lib/owner'
 import { InvitePage } from './pages/Invite'
 import { LoginPage } from './pages/Login'
+import { TodayPage } from './pages/Today'
 
 export function App() {
   const { me, loading } = useAuth()
@@ -14,7 +17,16 @@ export function App() {
       {!me ? (
         <Route path="*" element={<LoginPage />} />
       ) : (
-        <Route path="*" element={<main className="p-8 text-sm text-muted">Olá, {me.name}.</main>} />
+        <Route
+          element={
+            <OwnerProvider>
+              <Layout />
+            </OwnerProvider>
+          }
+        >
+          <Route index element={<TodayPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       )}
     </Routes>
   )
