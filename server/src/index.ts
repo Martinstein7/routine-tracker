@@ -15,6 +15,7 @@ import { addClient } from './lib/realtime.ts'
 import { adminRoutes } from './routes/admin.ts'
 import { activityRoutes } from './routes/activity.ts'
 import { authRoutes } from './routes/auth.ts'
+import { onDemandRoutes } from './routes/onDemand.ts'
 import { reportRoutes } from './routes/reports.ts'
 import { taskRoutes } from './routes/tasks.ts'
 
@@ -60,6 +61,7 @@ await app.register(authRoutes)
 await app.register(adminRoutes)
 await app.register(taskRoutes)
 await app.register(activityRoutes)
+await app.register(onDemandRoutes)
 await app.register(reportRoutes)
 
 // Em produção, o mesmo servidor entrega o site já compilado (web/dist).

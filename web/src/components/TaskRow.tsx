@@ -13,6 +13,44 @@ type Props = {
   onEdit: () => void
 }
 
+const ringByStatus: Record<TaskStatus, string> = {
+  PENDING: 'border-warn',
+  IN_PROGRESS: 'border-accent',
+  PAUSED: 'border-faint',
+  BLOCKED: 'border-bad',
+  DONE: 'border-ok',
+}
+
+/** Círculo de concluir: um clique marca como concluída; de novo, volta para pendente. */
+export function CompleteToggle({ task }: { task: Task }) {
+  const { setStatus } = useTaskActions()
+  const done = task.status === 'DONE'
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={done}
+      aria-label={done ? `Desmarcar conclusão de ${task.title}` : `Concluir ${task.title}`}
+      title={done ? 'Desmarcar conclusão' : 'Marcar como concluída'}
+      disabled={setStatus.isPending}
+      onClick={(e) => {
+        e.stopPropagation()
+        setStatus.mutate({ id: task.id, status: done ? 'PENDING' : 'DONE' })
+      }}
+      className="group/check relative inline-flex size-6 shrink-0 items-center justify-center rounded-full disabled:opacity-60"
+    >
+      <span
+        className={cx(
+          'flex size-[18px] items-center justify-center rounded-full border-2 transition-colors',
+          done ? 'border-ok bg-ok text-surface' : cx(ringByStatus[task.status], 'bg-surface text-transparent group-hover/check:border-ok group-hover/check:text-ok'),
+        )}
+      >
+        <Icon name="check" className="size-3" />
+      </span>
+    </button>
+  )
+}
+
 export function StatusSelect({ task }: { task: Task }) {
   const { setStatus } = useTaskActions()
   const meta = statusMeta[task.status]
@@ -26,7 +64,7 @@ export function StatusSelect({ task }: { task: Task }) {
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => setStatus.mutate({ id: task.id, status: e.target.value as TaskStatus })}
         className={cx(
-          'h-7 cursor-pointer appearance-none rounded-md border border-transparent bg-transparent pr-2 pl-5 text-[13px] hover:border-line-strong focus:border-accent focus:outline-none',
+          'h-7 cursor-pointer appearance-none rounded-md border border-line bg-transparent pr-2 pl-5 text-[13px] hover:border-line-strong focus:border-accent focus:outline-none',
           meta.text,
         )}
       >
@@ -57,9 +95,11 @@ export function TaskRow({ task, selected, first, last, onSelect, onEdit }: Props
         {task.endTime && <p className="text-xs text-faint">{task.endTime}</p>}
       </div>
 
-      <div className="relative flex w-3 shrink-0 justify-center" aria-hidden="true">
-        <span className={cx('absolute w-px bg-line', first ? 'top-[18px]' : 'top-0', last ? 'h-[18px]' : 'bottom-0')} />
-        <span className={cx('relative mt-[14px] size-2.5 rounded-full ring-4 ring-surface', statusMeta[task.status].dot)} />
+      <div className="relative flex w-6 shrink-0 justify-center">
+        <span aria-hidden="true" className={cx('absolute w-px bg-line', first ? 'top-[18px]' : 'top-0', last ? 'h-[18px]' : 'bottom-0')} />
+        <span className="relative mt-[7px] h-fit">
+          <CompleteToggle task={task} />
+        </span>
       </div>
 
       <button type="button" onClick={onSelect} className="min-w-0 flex-1 py-3 text-left focus-visible:outline-none">
@@ -73,6 +113,12 @@ export function TaskRow({ task, selected, first, last, onSelect, onEdit }: Props
           )}
           {task.priority !== 'MEDIUM' && <span className={priorityMeta[task.priority].text}>Prioridade {priorityMeta[task.priority].label.toLowerCase()}</span>}
           <span>por {task.createdBy.name.split(' ')[0]}</span>
+          {task.onDemandId && (
+            <span className="inline-flex items-center gap-1">
+              <Icon name="spark" className="size-3" />
+              Sob demanda
+            </span>
+          )}
           {task.rule && (
             <span className="inline-flex items-center gap-1" title="Recorrente">
               <Icon name="repeat" className="size-3" />

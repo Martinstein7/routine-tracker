@@ -3,6 +3,7 @@ import { CurrentActivity, pickCurrent } from '../components/CurrentActivity'
 import { Comments } from '../components/Comments'
 import { IncidentForm } from '../components/IncidentForm'
 import { PageHeader } from '../components/Layout'
+import { OnDemandCard } from '../components/OnDemand'
 import { OwnerSelect } from '../components/OwnerSelect'
 import { TaskForm } from '../components/TaskForm'
 import { TaskRow } from '../components/TaskRow'
@@ -148,6 +149,7 @@ export function TodayPage() {
 
         <div className="flex min-w-0 flex-col gap-6">
           {isToday && <CurrentActivity task={current} onEdit={setEditing} />}
+          {isToday && <OnDemandCard ownerId={ownerId} />}
           <Comments task={selected} />
           <WeekSummary date={date} ownerId={ownerId} onPick={setDate} />
         </div>

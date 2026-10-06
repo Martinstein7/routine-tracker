@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import type { Category, Comment, Incident, Recurrence, Task, TaskStatus, User } from '../types'
+import type { Category, Comment, Incident, OnDemandActivity, Recurrence, Task, TaskStatus, User } from '../types'
 import { api, qs } from './api'
 
 export const useUsers = () => useQuery({ queryKey: ['users'], queryFn: () => api.get<User[]>('/api/users') })
@@ -12,6 +12,12 @@ export const useTasks = (from: string, to: string, assigneeId?: string) =>
     queryKey: ['tasks', from, to, assigneeId ?? 'all'],
     queryFn: () => api.get<Task[]>(`/api/tasks${qs({ from, to, assigneeId })}`),
     placeholderData: (prev) => prev,
+  })
+
+export const useOnDemand = (assigneeId?: string) =>
+  useQuery({
+    queryKey: ['onDemand', assigneeId ?? 'all'],
+    queryFn: () => api.get<OnDemandActivity[]>(`/api/on-demand${qs({ assigneeId })}`),
   })
 
 export const useComments = (taskId: string | undefined) =>
@@ -39,11 +45,19 @@ export type TaskInput = {
   recurrence?: { pattern: Recurrence; endDate: string | null } | null
 }
 
+export type OnDemandInput = {
+  title: string
+  description: string
+  priority: Task['priority']
+  categoryId: string | null
+  assigneeId: string
+}
+
 /** Após qualquer mudança: recarrega tudo o que depende das tarefas. */
 function useRefreshTasks() {
   const qc = useQueryClient()
   return () => {
-    for (const key of ['tasks', 'reports', 'history', 'comments', 'incidents']) qc.invalidateQueries({ queryKey: [key] })
+    for (const key of ['tasks', 'onDemand', 'reports', 'history', 'comments', 'incidents']) qc.invalidateQueries({ queryKey: [key] })
   }
 }
 
@@ -76,6 +90,16 @@ export function useTaskActions() {
       ...opts,
     }),
     deleteIncident: useMutation({ mutationFn: (id: string) => api.del(`/api/incidents/${id}`), ...opts }),
+    createOnDemand: useMutation({ mutationFn: (body: OnDemandInput) => api.post<OnDemandActivity>('/api/on-demand', body), ...opts }),
+    updateOnDemand: useMutation({
+      mutationFn: ({ id, ...body }: Partial<OnDemandInput> & { id: string }) => api.patch<OnDemandActivity>(`/api/on-demand/${id}`, body),
+      ...opts,
+    }),
+    removeOnDemand: useMutation({ mutationFn: (id: string) => api.del(`/api/on-demand/${id}`), ...opts }),
+    logOnDemand: useMutation({
+      mutationFn: ({ id, mode }: { id: string; mode: 'start' | 'done' }) => api.post<Task>(`/api/on-demand/${id}/log`, { mode }),
+      ...opts,
+    }),
   }
 }
 

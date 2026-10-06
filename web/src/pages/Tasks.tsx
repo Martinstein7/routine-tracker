@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { PageHeader } from '../components/Layout'
 import { OwnerSelect } from '../components/OwnerSelect'
 import { TaskForm } from '../components/TaskForm'
-import { StatusSelect } from '../components/TaskRow'
+import { CompleteToggle, StatusSelect } from '../components/TaskRow'
 import { Button, Card, cx, Empty, Icon, inputCls, Segmented } from '../components/ui'
 import { addDays, endOfMonth, formatDate, isOverdue, priorityMeta, startOfMonth, startOfWeek, todayISO } from '../lib/format'
 import { useOwner } from '../lib/owner'
@@ -117,14 +117,21 @@ export function TasksPage() {
               <tbody className="divide-y divide-line border-t border-line">
                 {list.map((t) => (
                   <tr key={t.id} onClick={() => setEditing(t)} className="cursor-pointer hover:bg-canvas">
-                    <td className="max-w-72 px-4 py-2.5">
-                      <p className={cx('truncate font-medium', t.status === 'DONE' && 'text-muted')}>{t.title}</p>
-                      {t.category && (
-                        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
-                          <span className="size-2 rounded-sm" style={{ background: t.category.color }} />
-                          {t.category.name}
-                        </p>
-                      )}
+                    <td className="max-w-80 px-4 py-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <span className="-ml-1">
+                          <CompleteToggle task={t} />
+                        </span>
+                        <div className="min-w-0 pt-0.5">
+                          <p className={cx('truncate font-medium', t.status === 'DONE' && 'text-muted line-through decoration-faint')}>{t.title}</p>
+                          {(t.category || t.onDemandId) && (
+                            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                              {t.category && <span className="size-2 rounded-sm" style={{ background: t.category.color }} />}
+                              {[t.category?.name, t.onDemandId && 'Sob demanda'].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-2.5 tabular">
                       {formatDate(t.date)}

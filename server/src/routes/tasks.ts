@@ -13,7 +13,7 @@ import { materialize } from '../lib/recurrence.ts'
 
 const MAX_RANGE_DAYS = 62
 
-const taskInclude = {
+export const taskInclude = {
   category: true,
   assignee: { select: { id: true, name: true, role: true } },
   createdBy: { select: { id: true, name: true, role: true } },
@@ -67,7 +67,7 @@ async function loadTask(id: string) {
 }
 
 /** Quem pode ter tarefas criadas por quem: a gestora cria para o admin e, se liberado, para si. */
-async function assertCanAssign(me: User, assigneeId: string) {
+export async function assertCanAssign(me: User, assigneeId: string) {
   const assignee = await prisma.user.findUnique({ where: { id: assigneeId } })
   if (!assignee || !assignee.active) throw badRequest('Responsável inválido.')
   if (me.role === 'ADMIN') return
@@ -83,6 +83,20 @@ const minutesOf = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.
 
 function elapsed(task: Pick<Task, 'startedAt'>, now: Date) {
   return task.startedAt ? Math.max(0, Math.floor((now.getTime() - task.startedAt.getTime()) / 1000)) : 0
+}
+
+/** Pausa o que estiver em andamento para a pessoa, somando o tempo corrido. Devolve os títulos pausados. */
+export async function pauseRunning(tx: Prisma.TransactionClient, assigneeId: string, exceptId: string | null, now: Date) {
+  const running = await tx.task.findMany({
+    where: { assigneeId, status: 'IN_PROGRESS', deletedAt: null, ...(exceptId ? { id: { not: exceptId } } : {}) },
+  })
+  for (const r of running) {
+    await tx.task.update({
+      where: { id: r.id },
+      data: { status: 'PAUSED', startedAt: null, trackedSeconds: r.trackedSeconds + elapsed(r, now) },
+    })
+  }
+  return running.map((r) => r.title)
 }
 
 export async function taskRoutes(app: FastifyInstance) {
@@ -212,19 +226,7 @@ export async function taskRoutes(app: FastifyInstance) {
     const now = new Date()
 
     const paused = await prisma.$transaction(async (tx) => {
-      let pausedTitles: string[] = []
-      if (next === 'IN_PROGRESS') {
-        const running = await tx.task.findMany({
-          where: { assigneeId: task.assigneeId, status: 'IN_PROGRESS', deletedAt: null, id: { not: task.id } },
-        })
-        for (const r of running) {
-          await tx.task.update({
-            where: { id: r.id },
-            data: { status: 'PAUSED', startedAt: null, trackedSeconds: r.trackedSeconds + elapsed(r, now) },
-          })
-        }
-        pausedTitles = running.map((r) => r.title)
-      }
+      const pausedTitles = next === 'IN_PROGRESS' ? await pauseRunning(tx, task.assigneeId, task.id, now) : []
       await tx.task.update({
         where: { id: task.id },
         data: {

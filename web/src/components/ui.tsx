@@ -212,6 +212,7 @@ const paths: Record<string, string> = {
   check: 'M5 12l5 5L20 7',
   block: 'M12 3a9 9 0 100 18 9 9 0 000-18zM5.6 5.6l12.8 12.8',
   bolt: 'M13 3L5 14h6l-1 7 8-11h-6l1-7z',
+  spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
   repeat: 'M17 2l3 3-3 3M4 11V9a4 4 0 014-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 01-4 4H4',
   home: 'M4 11l8-7 8 7M6 9.5V20h12V9.5',
   calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',

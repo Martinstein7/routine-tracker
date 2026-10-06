@@ -86,9 +86,11 @@ Visual minimalista: poucas cores, bastante espaço em branco e só o que é nece
 
 | Tela | O que tem |
 |---|---|
-| **Hoje** | Resumo do dia, rotina em linha do tempo, atividade atual com cronômetro, comentários, imprevistos e resumo da semana |
+| **Hoje** | Resumo do dia, rotina em linha do tempo (o círculo de cada tarefa conclui com um clique), atividade atual com cronômetro, atividades sob demanda, comentários, imprevistos e resumo da semana |
 | **Calendário** | Visão de semana e de mês; clique em um dia para adicionar tarefa |
-| **Tarefas** | Lista filtrável por período, status e busca; atalho para as atrasadas |
+| **Tarefas** | Lista filtrável por período, status e busca, com conclusão rápida; atalho para as atrasadas |
+
+**Atividades sob demanda** são as que acontecem com frequência, mas sem horário fixo (ex.: atender um chamado). Ficam cadastradas no cartão "Sob demanda" da tela Hoje; quando uma surge, **Iniciar** cria a ocorrência no horário atual com cronômetro, e **Feita** registra como já concluída. Cada ocorrência entra na rotina do dia e nos relatórios.
 | **Histórico** | Tudo o que foi feito, por pessoa e período, e a lista de imprevistos. Só o admin edita ou apaga |
 | **Relatórios** | Taxa de conclusão, atrasos, tempo registrado, imprevistos e distribuição por dia, categoria, status e prioridade |
 | **Configurações** | Aparência (tema claro, escuro ou automático e cores com seletor), de cada pessoa. Só admin: usuários, convites, permissões da gestora, categorias e backup |

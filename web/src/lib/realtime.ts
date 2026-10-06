@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 
 // O servidor avisa o que mudou; aqui só pedimos para recarregar o que depende disso.
 const dependents: Record<string, string[]> = {
-  tasks: ['tasks', 'reports'],
+  tasks: ['tasks', 'reports', 'onDemand'],
+  onDemand: ['onDemand'],
   comments: ['comments'],
   incidents: ['incidents', 'reports'],
   history: ['history'],

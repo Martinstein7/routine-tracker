@@ -35,12 +35,25 @@ export type Task = {
   createdById: string
   createdBy: UserSummary
   ruleId: string | null
+  onDemandId: string | null
   rule: { id: string; pattern: Recurrence; active: boolean } | null
   startedAt: string | null
   trackedSeconds: number
   completedAt: string | null
   createdAt: string
   _count: { comments: number }
+}
+
+export type OnDemandActivity = {
+  id: string
+  title: string
+  description: string
+  priority: Priority
+  categoryId: string | null
+  category: Category | null
+  assigneeId: string
+  todayCount: number
+  lastTime: string | null
 }
 
 export type Comment = { id: string; taskId: string; body: string; createdAt: string; author: UserSummary }
