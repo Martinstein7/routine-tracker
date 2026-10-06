@@ -18,7 +18,7 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
       className={cx(
         'inline-flex items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50',
         size === 'sm' ? 'h-7 px-2.5 text-[13px]' : 'h-9 px-3.5 text-sm',
-        variant === 'primary' && 'bg-accent text-white hover:bg-accent-hover',
+        variant === 'primary' && 'bg-accent text-on-accent hover:bg-accent-hover',
         variant === 'secondary' && 'border border-line-strong bg-surface text-ink hover:bg-canvas',
         variant === 'ghost' && 'text-muted hover:bg-canvas hover:text-ink',
         variant === 'danger' && 'border border-line-strong bg-surface text-bad hover:bg-bad-soft',
@@ -101,7 +101,7 @@ export function Modal({
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/30 p-4 sm:pt-[8vh]" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:pt-[8vh]" onMouseDown={onClose}>
       <div
         role="dialog"
         aria-modal="true"

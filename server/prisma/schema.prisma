@@ -39,6 +39,8 @@ model User {
   passwordHash String
   role         Role
   active       Boolean  @default(true)
+  // Tema da interface escolhido pela pessoa (modo e cores personalizadas).
+  theme        Json?
   createdAt    DateTime @default(now())
 
   tasksAssigned  Task[]          @relation("TaskAssignee")

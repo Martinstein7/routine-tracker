@@ -75,7 +75,7 @@ export function Comments({ task }: { task: Task | undefined }) {
               <button
                 type="submit"
                 disabled={!body.trim() || comment.isPending}
-                className="inline-flex size-9 items-center justify-center rounded-md bg-accent text-white hover:bg-accent-hover disabled:opacity-40"
+                className="inline-flex size-9 items-center justify-center rounded-md bg-accent text-on-accent hover:bg-accent-hover disabled:opacity-40"
                 aria-label="Enviar comentário"
               >
                 <Icon name="right" />

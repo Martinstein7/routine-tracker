@@ -2,8 +2,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import type { Me, PermissionKey, Permissions } from '../types'
 import { api, ApiError, setUnauthorizedHandler } from './api'
+import { ThemeProvider, type ThemePrefs } from './theme'
 
-type Session = { user: Me; permissions: Permissions }
+type Session = { user: Me; permissions: Permissions; theme: ThemePrefs | null }
 
 type AuthValue = {
   me: Me | null
@@ -69,7 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [session.data, session.isPending, refresh, queryClient],
   )
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      <ThemeProvider loggedIn={!!session.data} saved={session.data?.theme ?? null}>
+        {children}
+      </ThemeProvider>
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

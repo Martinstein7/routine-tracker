@@ -1,22 +1,33 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
 import { PageHeader } from '../components/Layout'
-import { Avatar, Button, Card, ConfirmButton, cx, ErrorText, Field, Icon, inputCls } from '../components/ui'
+import { Avatar, Button, Card, ConfirmButton, cx, ErrorText, Field, Icon, inputCls, Segmented } from '../components/ui'
 import { api } from '../lib/api'
 import { useAuth, useMe } from '../lib/auth'
 import { formatDate, roleLabel, toISO } from '../lib/format'
 import { useCategories, useUsers } from '../lib/queries'
+import { colorFields, defaultColors, useTheme } from '../lib/theme'
 import type { Category, Invite, Role } from '../types'
 
 export function SettingsPage() {
   const { can } = useAuth()
-  if (!can('admin')) return <Navigate to="/" replace />
+  // A gestora só vê a aparência, que é pessoal; o resto é do admin.
+  if (!can('admin')) {
+    return (
+      <>
+        <PageHeader title="Configurações" subtitle="Aparência da interface para a sua conta." />
+        <div className="max-w-2xl">
+          <Appearance />
+        </div>
+      </>
+    )
+  }
   return (
     <>
-      <PageHeader title="Configurações" subtitle="Acessos, permissões da gestora e categorias." />
+      <PageHeader title="Configurações" subtitle="Aparência, acessos, permissões da gestora e categorias." />
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-6">
+          <Appearance />
           <Users />
           <Invites />
         </div>
@@ -27,6 +38,106 @@ export function SettingsPage() {
         </div>
       </div>
     </>
+  )
+}
+
+function Appearance() {
+  const { prefs, resolved, saving, setMode, setColor, resetColors } = useTheme()
+  const custom = prefs[resolved]
+  const themeName = resolved === 'dark' ? 'escuro' : 'claro'
+
+  return (
+    <Card
+      title="Aparência"
+      action={
+        <span className="text-xs text-muted" aria-live="polite">
+          {saving === 'saving' ? 'Salvando…' : saving === 'saved' ? 'Salvo' : ''}
+        </span>
+      }
+    >
+      <div className="flex flex-col gap-5 px-4 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Tema</p>
+            <p className="text-xs text-muted">Automático segue o claro ou escuro do seu computador.</p>
+          </div>
+          <Segmented
+            label="Tema"
+            value={prefs.mode}
+            onChange={setMode}
+            options={[
+              { value: 'light', label: 'Claro' },
+              { value: 'dark', label: 'Escuro' },
+              { value: 'system', label: 'Automático' },
+            ]}
+          />
+        </div>
+
+        <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-medium">Cores do tema {themeName}</p>
+            <Button size="sm" variant="ghost" disabled={Object.keys(custom).length === 0} onClick={resetColors}>
+              Restaurar padrão
+            </Button>
+          </div>
+          <p className="text-xs text-muted">
+            A mudança aparece na hora. Cada tema guarda as próprias cores; para editar o {resolved === 'dark' ? 'claro' : 'escuro'}, mude o tema acima.
+          </p>
+          <ul className="mt-3 divide-y divide-line rounded-md border border-line">
+            {colorFields.map((f) => (
+              <ColorRow
+                key={`${resolved}-${f.key}`}
+                id={`color-${f.key}`}
+                label={f.label}
+                hint={f.hint}
+                value={custom[f.key] ?? defaultColors[resolved][f.key]}
+                changed={!!custom[f.key]}
+                onChange={(v) => setColor(f.key, v)}
+              />
+            ))}
+          </ul>
+        </div>
+        {saving === 'error' && <ErrorText>Não foi possível salvar o tema. Ele continua aplicado neste navegador.</ErrorText>}
+      </div>
+    </Card>
+  )
+}
+
+function ColorRow({ id, label, hint, value, changed, onChange }: { id: string; label: string; hint: string; value: string; changed: boolean; onChange: (v: string) => void }) {
+  // O campo de texto aceita digitação livre e só aplica quando vira um hexadecimal válido.
+  const [text, setText] = useState(value)
+  useEffect(() => setText(value), [value])
+
+  return (
+    <li className="flex items-center gap-3 px-3 py-2.5">
+      <input
+        id={id}
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 w-10 shrink-0 cursor-pointer rounded border border-line-strong bg-surface p-0.5"
+      />
+      <label htmlFor={id} className="min-w-0 flex-1">
+        <span className="block text-sm">
+          {label}
+          {changed && <span className="ml-1.5 text-xs text-accent">· alterada</span>}
+        </span>
+        <span className="block truncate text-xs text-muted">{hint}</span>
+      </label>
+      <input
+        aria-label={`${label} em hexadecimal`}
+        value={text}
+        maxLength={7}
+        spellCheck={false}
+        onChange={(e) => {
+          const next = e.target.value.trim()
+          setText(next)
+          if (/^#[0-9a-f]{6}$/i.test(next)) onChange(next.toLowerCase())
+        }}
+        onBlur={() => setText(value)}
+        className={cx(inputCls, 'h-8 w-24 font-mono text-xs uppercase')}
+      />
+    </li>
   )
 }
 

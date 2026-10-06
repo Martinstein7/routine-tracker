@@ -116,7 +116,7 @@ export function CalendarPage() {
                   <span
                     className={cx(
                       'inline-flex size-6 items-center justify-center rounded-full text-xs tabular',
-                      d === today ? 'bg-accent font-semibold text-white' : outside ? 'text-faint' : 'text-ink',
+                      d === today ? 'bg-accent font-semibold text-on-accent' : outside ? 'text-faint' : 'text-ink',
                     )}
                   >
                     {parseISO(d).getDate()}

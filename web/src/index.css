@@ -1,25 +1,48 @@
 @import 'tailwindcss';
 
+/* Cores base do tema claro. As que têm seletor em Configurações → Aparência podem ser trocadas
+   por pessoa; o restante é derivado delas, para acompanhar qualquer cor escolhida. */
 @theme {
   --font-sans: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
 
   --color-canvas: #f6f7f9;
   --color-surface: #ffffff;
   --color-line: #e5e7ec;
-  --color-line-strong: #d3d7df;
   --color-ink: #1c2230;
   --color-muted: #687085;
-  --color-faint: #9aa1b1;
   --color-accent: #2f5fd0;
-  --color-accent-hover: #2650b5;
-  --color-accent-soft: #edf2fd;
+  --color-on-accent: #ffffff;
 
   --color-ok: #1f9d63;
-  --color-ok-soft: #e8f6ef;
   --color-warn: #c98a12;
-  --color-warn-soft: #fbf3e2;
   --color-bad: #d6453d;
-  --color-bad-soft: #fcecea;
+
+  --color-line-strong: color-mix(in oklab, var(--color-line), var(--color-ink) 12%);
+  --color-faint: color-mix(in oklab, var(--color-muted) 65%, var(--color-surface));
+  --color-accent-hover: color-mix(in oklab, var(--color-accent) 86%, var(--color-ink));
+  --color-accent-soft: color-mix(in oklab, var(--color-accent) 10%, var(--color-surface));
+  --color-ok-soft: color-mix(in oklab, var(--color-ok) 12%, var(--color-surface));
+  --color-warn-soft: color-mix(in oklab, var(--color-warn) 12%, var(--color-surface));
+  --color-bad-soft: color-mix(in oklab, var(--color-bad) 12%, var(--color-surface));
+}
+
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-canvas: #0f1218;
+  --color-surface: #171b23;
+  --color-line: #262c38;
+  --color-ink: #e6e9ef;
+  --color-muted: #9aa3b5;
+  --color-accent: #6b93f0;
+  --color-on-accent: #0f1218;
+
+  --color-ok: #3fb47a;
+  --color-warn: #d9a23a;
+  --color-bad: #e5534b;
 }
 
 @layer base {

@@ -21,6 +21,17 @@ const acceptBody = z.object({
   password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
 })
 
+const hex = z.string().regex(/^#[0-9a-f]{6}$/i, 'Cor inválida.')
+const palette = z
+  .object({ accent: hex, canvas: hex, surface: hex, line: hex, ink: hex, muted: hex })
+  .partial()
+  .strict()
+const themeBody = z.object({
+  mode: z.enum(['light', 'dark', 'system']),
+  light: palette,
+  dark: palette,
+})
+
 // Limite simples contra tentativas repetidas: 10 erros a cada 15 minutos por IP.
 const failures = new Map<string, { count: number; until: number }>()
 const WINDOW_MS = 15 * 60 * 1000
@@ -71,7 +82,14 @@ export async function authRoutes(app: FastifyInstance) {
   })
 
   app.get('/api/auth/me', { preHandler: authenticate }, async (request) => {
-    return { user: publicUser(request.me), permissions: await permissionsFor(request.me) }
+    return { user: publicUser(request.me), permissions: await permissionsFor(request.me), theme: request.me.theme }
+  })
+
+  // Tema é preferência pessoal: cada um salva o seu, sem passar pelas permissões.
+  app.put('/api/auth/me/theme', { preHandler: authenticate }, async (request) => {
+    const theme = themeBody.parse(request.body)
+    await prisma.user.update({ where: { id: request.me.id }, data: { theme } })
+    return { theme }
   })
 
   // Convites: a página de criação de conta só funciona com um link válido.

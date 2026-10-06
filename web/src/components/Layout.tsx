@@ -17,7 +17,7 @@ export function Layout() {
   const me = useMe()
   const { can, logout } = useAuth()
   const connected = useRealtime()
-  const items = can('admin') ? [...nav, { to: '/configuracoes', label: 'Configurações', icon: 'settings' }] : nav
+  const items = [...nav, { to: '/configuracoes', label: 'Configurações', icon: 'settings' }]
 
   return (
     <div className="flex min-h-full flex-col lg:flex-row">

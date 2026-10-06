@@ -60,6 +60,7 @@ Legenda: ✅ permitido · ⚪ desativado por padrão, o admin pode liberar · �
 | Gerenciar categorias | ✅ | ❌ |
 | Gerenciar usuários | ✅ | ❌ |
 | Alterar permissões | ✅ | ❌ |
+| Aparência pessoal (tema claro/escuro e cores) | ✅ | ✅ |
 | Configurações do sistema | ✅ | ❌ |
 | Configurar integrações | ✅ | ❌ |
 | Backup/exportação | ✅ | ❌ |
@@ -90,7 +91,7 @@ Visual minimalista: poucas cores, bastante espaço em branco e só o que é nece
 | **Tarefas** | Lista filtrável por período, status e busca; atalho para as atrasadas |
 | **Histórico** | Tudo o que foi feito, por pessoa e período, e a lista de imprevistos. Só o admin edita ou apaga |
 | **Relatórios** | Taxa de conclusão, atrasos, tempo registrado, imprevistos e distribuição por dia, categoria, status e prioridade |
-| **Configurações** | Só admin: usuários, convites, permissões da gestora, categorias e backup |
+| **Configurações** | Aparência (tema claro, escuro ou automático e cores com seletor), de cada pessoa. Só admin: usuários, convites, permissões da gestora, categorias e backup |
 
 ## Instalação
 
