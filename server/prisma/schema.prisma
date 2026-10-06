@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  PAUSED
+  BLOCKED
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Recurrence {
+  DAILY
+  WEEKDAYS
+  WEEKLY
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  tasksAssigned  Task[]          @relation("TaskAssignee")
+  tasksCreated   Task[]          @relation("TaskCreator")
+  rulesAssigned  RecurringRule[] @relation("RuleAssignee")
+  rulesCreated   RecurringRule[] @relation("RuleCreator")
+  comments       Comment[]
+  incidents      Incident[]
+  events         HistoryEvent[]
+  invitesCreated Invite[]
+}
+
+// Link de criação de conta. Só o hash do token fica salvo.
+model Invite {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  role        Role
+  name        String?
+  email       String?
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Category {
+  id        String          @id @default(cuid())
+  name      String          @unique
+  color     String
+  sortOrder Int             @default(0)
+  tasks     Task[]
+  rules     RecurringRule[]
+}
+
+// Datas como "AAAA-MM-DD" e horários como "HH:MM", sem fuso.
+model Task {
+  id             String         @id @default(cuid())
+  title          String
+  description    String         @default("")
+  date           String
+  startTime      String
+  endTime        String?
+  priority       Priority       @default(MEDIUM)
+  status         TaskStatus     @default(PENDING)
+  categoryId     String?
+  category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  assigneeId     String
+  assignee       User           @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User           @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  ruleId         String?
+  rule           RecurringRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  startedAt      DateTime?
+  trackedSeconds Int            @default(0)
+  completedAt    DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  comments  Comment[]
+  incidents Incident[]
+  events    HistoryEvent[]
+
+  @@unique([ruleId, date])
+  @@index([assigneeId, date])
+}
+
+// Modelo de tarefa recorrente. As ocorrências são criadas quando o dia é consultado.
+model RecurringRule {
+  id          String     @id @default(cuid())
+  title       String
+  description String     @default("")
+  startTime   String
+  endTime     String?
+  priority    Priority   @default(MEDIUM)
+  categoryId  String?
+  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  assigneeId  String
+  assignee    User       @relation("RuleAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User       @relation("RuleCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  pattern     Recurrence
+  weekday     Int?
+  startDate   String
+  endDate     String?
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  tasks       Task[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model Incident {
+  id              String   @id @default(cuid())
+  title           String
+  description     String   @default("")
+  date            String
+  startTime       String
+  durationMinutes Int
+  taskId          String?
+  task            Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  authorId        String
+  author          User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+}
+
+model HistoryEvent {
+  id        String    @id @default(cuid())
+  actorId   String?
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  taskId    String?
+  task      Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  summary   String
+  detail    String    @default("")
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+
+  @@index([createdAt])
+}
+
+// Permissões opcionais (⚪) da gestora, liberadas pelo admin.
+model ManagerPermission {
+  key     String  @id
+  enabled Boolean @default(false)
+}
