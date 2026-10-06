@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { useAuth } from './lib/auth'
 import { OwnerProvider } from './lib/owner'
+import { CalendarPage } from './pages/Calendar'
 import { InvitePage } from './pages/Invite'
 import { LoginPage } from './pages/Login'
 import { TodayPage } from './pages/Today'
@@ -25,6 +26,7 @@ export function App() {
           }
         >
           <Route index element={<TodayPage />} />
+          <Route path="calendario" element={<CalendarPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       )}
