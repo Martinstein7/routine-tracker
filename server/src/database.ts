@@ -7,9 +7,10 @@ import EmbeddedPostgres from 'embedded-postgres'
 import pg from 'pg'
 import { env } from './env.ts'
 
-// PostgreSQL embutido: roda na própria máquina, só em localhost, com os dados em server/.pgdata.
+// PostgreSQL embutido: roda na própria máquina, só em localhost, com os dados em server/.pgdata
+// (a demonstração usa server/.pgdata-demo).
 const SERVER_DIR = fileURLToPath(new URL('..', import.meta.url))
-const DATA_DIR = join(SERVER_DIR, '.pgdata')
+const DATA_DIR = join(SERVER_DIR, env.pgDataDir)
 
 async function isReachable(): Promise<boolean> {
   const client = new pg.Client({ connectionString: env.databaseUrl, connectionTimeoutMillis: 1500 })

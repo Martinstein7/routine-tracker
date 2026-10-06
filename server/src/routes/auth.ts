@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { prisma } from '../db.ts'
 import { env } from '../env.ts'
 import { authenticate, publicUser, SESSION_COOKIE, SESSION_DAYS } from '../lib/auth.ts'
+import { notInDemo } from '../lib/demo.ts'
 import { badRequest, HttpError } from '../lib/errors.ts'
 import { record } from '../lib/history.ts'
 import { permissionsFor } from '../lib/permissions.ts'
@@ -63,6 +64,7 @@ export async function authRoutes(app: FastifyInstance) {
   }
 
   app.post('/api/auth/login', async (request, reply) => {
+    notInDemo()
     checkRate(request.ip)
     const { email, password } = loginBody.parse(request.body)
     const user = await prisma.user.findUnique({ where: { email } })
@@ -77,6 +79,7 @@ export async function authRoutes(app: FastifyInstance) {
   })
 
   app.post('/api/auth/logout', async (_request, reply) => {
+    if (env.demo) return { ok: true }
     reply.clearCookie(SESSION_COOKIE, { path: '/' })
     return { ok: true }
   })
@@ -88,6 +91,8 @@ export async function authRoutes(app: FastifyInstance) {
   // Tema é preferência pessoal: cada um salva o seu, sem passar pelas permissões.
   app.put('/api/auth/me/theme', { preHandler: authenticate }, async (request) => {
     const theme = themeBody.parse(request.body)
+    // Na demonstração todos usam a mesma conta: o tema fica só no navegador de cada visitante.
+    if (env.demo) return { theme }
     await prisma.user.update({ where: { id: request.me.id }, data: { theme } })
     return { theme }
   })
@@ -106,6 +111,7 @@ export async function authRoutes(app: FastifyInstance) {
   })
 
   app.post<{ Params: { token: string } }>('/api/invites/:token/accept', async (request, reply) => {
+    notInDemo()
     const invite = await findInvite(request.params.token)
     if (!invite) throw new HttpError(404, 'Este link de convite é inválido, já foi usado ou expirou.')
     const body = acceptBody.parse(request.body)
@@ -148,6 +154,7 @@ export async function authRoutes(app: FastifyInstance) {
   })
 
   app.post('/api/setup', async (request, reply) => {
+    notInDemo()
     await checkSetup(request.ip)
     const body = acceptBody.parse(request.body)
 

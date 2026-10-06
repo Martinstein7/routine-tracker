@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts --dev",
     "start": "tsx src/index.ts",
+    "demo": "tsx src/demo.ts",
     "db": "tsx src/scripts/db.ts",
     "setup": "tsx src/scripts/setup.ts",
     "typecheck": "tsc --noEmit",

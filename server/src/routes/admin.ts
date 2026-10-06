@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../db.ts'
 import { env } from '../env.ts'
 import { authenticate } from '../lib/auth.ts'
+import { notInDemo } from '../lib/demo.ts'
 import { badRequest, notFound } from '../lib/errors.ts'
 import { record } from '../lib/history.ts'
 import { assertCan, isOptionalPermission, managerPermissions, OPTIONAL_PERMISSIONS } from '../lib/permissions.ts'
@@ -57,6 +58,7 @@ export async function adminRoutes(app: FastifyInstance) {
     })
 
     admin.post('/api/admin/invites', async (request) => {
+      notInDemo()
       const body = inviteBody.parse(request.body)
       if (body.email && (await prisma.user.findUnique({ where: { email: body.email } }))) {
         throw badRequest('Já existe uma conta com este e-mail.')
@@ -87,6 +89,7 @@ export async function adminRoutes(app: FastifyInstance) {
     })
 
     admin.patch<{ Params: { id: string } }>('/api/admin/users/:id', async (request) => {
+      notInDemo()
       const { active } = userPatch.parse(request.body)
       if (request.params.id === request.me.id) throw badRequest('Você não pode desativar a própria conta.')
       const user = await prisma.user.update({ where: { id: request.params.id }, data: { active } })
@@ -157,6 +160,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     // Backup em JSON com tudo, menos senhas e tokens.
     admin.get('/api/admin/export', async (_request, reply) => {
+      notInDemo()
       const [users, categories, tasks, rules, comments, incidents, history, permissions] = await Promise.all([
         prisma.user.findMany({ select: { id: true, name: true, email: true, role: true, active: true, createdAt: true } }),
         prisma.category.findMany(),

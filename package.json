@@ -10,6 +10,7 @@
     "dev": "concurrently -n db,api,web -c gray,blue,green \"npm run db -w server\" \"npm run dev -w server\" \"npm run dev -w web\"",
     "build": "npm run build -w web",
     "start": "npm run start -w server",
+    "demo": "npm run demo -w server",
     "admin:create": "npm run admin:create -w server --"
   },
   "devDependencies": {

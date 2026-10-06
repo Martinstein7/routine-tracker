@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 const dependents: Record<string, string[]> = {
   tasks: ['tasks', 'reports', 'onDemand'],
   onDemand: ['onDemand'],
+  demo: ['demo'],
   comments: ['comments'],
   incidents: ['incidents', 'reports'],
   history: ['history'],

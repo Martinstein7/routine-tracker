@@ -20,6 +20,14 @@ export const useOnDemand = (assigneeId?: string) =>
     queryFn: () => api.get<OnDemandActivity[]>(`/api/on-demand${qs({ assigneeId })}`),
   })
 
+/** Modo demonstração (npm run demo): sem login, dados fictícios que voltam ao padrão sozinhos. */
+export const useDemo = () =>
+  useQuery({
+    queryKey: ['demo'],
+    queryFn: () => api.get<{ demo: boolean; resetAt: string | null }>('/api/demo'),
+    staleTime: Infinity,
+  })
+
 export const useComments = (taskId: string | undefined) =>
   useQuery({
     queryKey: ['comments', taskId],

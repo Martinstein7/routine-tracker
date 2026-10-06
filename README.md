@@ -144,6 +144,20 @@ Para convidar a gestora, entre como admin, abra **Configurações → Convidar p
   ```
 - Se o IP da sua máquina mudar com frequência, peça um IP fixo para a TI ou defina `PUBLIC_URL` em `server/.env` (por exemplo, `PUBLIC_URL=http://192.168.0.50:3000`).
 
+### Demonstração (para apresentar o projeto)
+
+```bash
+npm run build   # se ainda não compilou o site
+npm run demo
+```
+
+Liga uma cópia de demonstração na porta **3001**, ao lado do sistema real e sem tocar nele: banco próprio (`server/.pgdata-demo`), dados fictícios e entrada direta, sem login, como o admin "Visitante".
+
+- **Na sua máquina:** `http://localhost:3001`
+- **Em outra máquina da mesma rede:** `http://<ip-da-sua-máquina>:3001` (o terminal mostra o endereço)
+
+Quem estiver vendo pode clicar em tudo. Qualquer alteração é desfeita sozinha **10 minutos depois da primeira mudança**, e uma faixa no topo mostra o horário. Ao religar a demonstração, os dados também voltam ao original. Convites, desativar usuários e backup ficam bloqueados.
+
 ### Desenvolvimento
 
 ```bash

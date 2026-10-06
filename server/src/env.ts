@@ -25,5 +25,8 @@ export const env = {
   jwtSecret: required('JWT_SECRET'),
   port,
   host: process.env.HOST ?? '0.0.0.0',
+  // Demonstração: entra sem login, com dados fictícios num banco à parte (ver src/demo.ts).
+  demo: process.env.DEMO === 'true',
+  pgDataDir: process.env.PG_DATA_DIR ?? '.pgdata',
   publicUrl: process.env.PUBLIC_URL || `http://${lanAddress() ?? 'localhost'}:${port}`,
 }

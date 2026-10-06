@@ -1,9 +1,11 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { prisma } from '../db.ts'
+import { env } from '../env.ts'
 import type { User } from '../generated/prisma/client.ts'
 import { HttpError } from './errors.ts'
 
-export const SESSION_COOKIE = 'rt_session'
+// localhost:3000 e localhost:3001 compartilham cookies: a demonstração usa outro nome para nunca tocar na sessão real.
+export const SESSION_COOKIE = env.demo ? 'rt_demo_session' : 'rt_session'
 export const SESSION_DAYS = 30
 
 declare module '@fastify/jwt' {
@@ -20,6 +22,13 @@ declare module 'fastify' {
 }
 
 export async function authenticate(request: FastifyRequest, _reply: FastifyReply) {
+  // Na demonstração não há login: todo visitante entra como o admin fictício.
+  if (env.demo) {
+    const visitor = await prisma.user.findFirst({ where: { role: 'ADMIN', active: true }, orderBy: { createdAt: 'asc' } })
+    if (!visitor) throw new HttpError(503, 'A demonstração está sendo preparada. Tente de novo em instantes.')
+    request.me = visitor
+    return
+  }
   try {
     await request.jwtVerify()
   } catch {
