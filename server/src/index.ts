@@ -12,7 +12,10 @@ import { authenticate, SESSION_COOKIE } from './lib/auth.ts'
 import { HttpError } from './lib/errors.ts'
 import { addClient } from './lib/realtime.ts'
 import { adminRoutes } from './routes/admin.ts'
+import { activityRoutes } from './routes/activity.ts'
 import { authRoutes } from './routes/auth.ts'
+import { reportRoutes } from './routes/reports.ts'
+import { taskRoutes } from './routes/tasks.ts'
 
 // Em desenvolvimento o banco roda à parte (npm run db). Em produção, o servidor liga tudo.
 const isDev = process.argv.includes('--dev')
@@ -50,6 +53,9 @@ app.get('/api/ws', { websocket: true, preHandler: authenticate }, (socket) => ad
 
 await app.register(authRoutes)
 await app.register(adminRoutes)
+await app.register(taskRoutes)
+await app.register(activityRoutes)
+await app.register(reportRoutes)
 
 // Em produção, o mesmo servidor entrega o site já compilado (web/dist).
 const webDist = fileURLToPath(new URL('../../web/dist', import.meta.url))

@@ -31,6 +31,8 @@ async function startEmbedded(): Promise<() => Promise<void>> {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     persistent: true,
+    // Sem isso o Windows cria o banco em WIN1252 e recusa caracteres como "→".
+    initdbFlags: ['--encoding=UTF8', '--no-locale'],
     onLog: () => {},
     onError: (e) => console.error(e),
   })
