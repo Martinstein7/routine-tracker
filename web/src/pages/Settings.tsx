@@ -109,20 +109,20 @@ function ColorRow({ id, label, hint, value, changed, onChange }: { id: string; l
   useEffect(() => setText(value), [value])
 
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5">
+    <li className="flex items-center gap-4 px-4 py-3">
       <input
         id={id}
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-8 w-10 shrink-0 cursor-pointer rounded border border-line-strong bg-surface p-0.5"
+        className="size-9 shrink-0 cursor-pointer rounded-md border border-line-strong bg-surface p-1"
       />
-      <label htmlFor={id} className="min-w-0 flex-1">
-        <span className="block text-sm">
+      <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
+        <span className="block text-sm leading-5 font-medium">
           {label}
-          {changed && <span className="ml-1.5 text-xs text-accent">· alterada</span>}
+          {changed && <span className="ml-2 text-xs font-normal text-muted">· alterada</span>}
         </span>
-        <span className="block truncate text-xs text-muted">{hint}</span>
+        <span className="mt-0.5 block text-xs leading-4 text-muted">{hint}</span>
       </label>
       <input
         aria-label={`${label} em hexadecimal`}
@@ -135,7 +135,7 @@ function ColorRow({ id, label, hint, value, changed, onChange }: { id: string; l
           if (/^#[0-9a-f]{6}$/i.test(next)) onChange(next.toLowerCase())
         }}
         onBlur={() => setText(value)}
-        className={cx(inputCls, 'h-8 w-24 font-mono text-xs uppercase')}
+        className="h-8 w-[5.5rem] shrink-0 rounded-md border border-line-strong bg-surface px-2 text-center font-mono text-xs text-ink uppercase focus:border-accent focus:outline-none"
       />
     </li>
   )
