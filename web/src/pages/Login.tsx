@@ -1,6 +1,9 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Button, ErrorText, Field, inputCls } from '../components/ui'
 import { Brand } from '../components/Brand'
+import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
 export function LoginPage() {
@@ -9,6 +12,8 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  // Sem nenhuma conta ainda: mostra o atalho para o cadastro do primeiro admin.
+  const setup = useQuery({ queryKey: ['setup'], queryFn: () => api.get<{ available: boolean }>('/api/setup'), retry: false })
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -39,7 +44,16 @@ export function LoginPage() {
           {busy ? 'Entrando…' : 'Entrar'}
         </Button>
       </form>
-      <p className="mt-6 text-center text-xs text-muted">Não tem conta? O acesso é feito por convite do administrador.</p>
+      {setup.data?.available ? (
+        <p className="mt-6 text-center text-xs text-muted">
+          Primeiro acesso?{' '}
+          <Link to="/primeiro-acesso" className="font-medium text-accent hover:underline">
+            Criar conta de administrador
+          </Link>
+        </p>
+      ) : (
+        <p className="mt-6 text-center text-xs text-muted">Não tem conta? O acesso é feito por convite do administrador.</p>
+      )}
     </AuthShell>
   )
 }

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { prisma } from '../db.ts'
+import { env } from '../env.ts'
 import { authenticate, publicUser, SESSION_COOKIE, SESSION_DAYS } from '../lib/auth.ts'
 import { badRequest, HttpError } from '../lib/errors.ts'
 import { record } from '../lib/history.ts'
@@ -111,4 +112,44 @@ export async function authRoutes(app: FastifyInstance) {
     setSession(reply, user.id)
     return { user: publicUser(user) }
   })
+
+  // Primeiro acesso: enquanto não houver nenhuma conta, o primeiro admin se cadastra pelo link
+  // /primeiro-acesso. Só vale na própria máquina do servidor, para ninguém da rede pegar o admin antes.
+  async function checkSetup(ip: string) {
+    if ((await prisma.user.count()) > 0) {
+      throw new HttpError(404, 'O sistema já tem um administrador. Novas contas só entram por convite.')
+    }
+    if (!isLoopback(ip)) {
+      throw new HttpError(403, `Abra este link no computador onde o servidor está ligado: http://localhost:${env.port}/primeiro-acesso`)
+    }
+  }
+
+  app.get('/api/setup', async (request) => {
+    await checkSetup(request.ip)
+    return { available: true }
+  })
+
+  app.post('/api/setup', async (request, reply) => {
+    await checkSetup(request.ip)
+    const body = acceptBody.parse(request.body)
+
+    const user = await prisma.$transaction(async (tx) => {
+      if ((await tx.user.count()) > 0) throw new HttpError(404, 'O sistema já tem um administrador.')
+      return tx.user.create({
+        data: {
+          name: body.name,
+          email: body.email,
+          passwordHash: await bcrypt.hash(body.password, 12),
+          role: 'ADMIN',
+        },
+      })
+    })
+
+    await record({ actorId: user.id, action: 'user.joined', summary: `${user.name} criou a conta de administrador` })
+    broadcast(['users'], user.id)
+    setSession(reply, user.id)
+    return { user: publicUser(user) }
+  })
 }
+
+const isLoopback = (ip: string) => ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'

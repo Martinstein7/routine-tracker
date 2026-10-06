@@ -107,11 +107,16 @@ cp server/.env.example server/.env
 # Cria o banco, aplica as tabelas e as categorias padrão
 npm run setup
 
-# Cria a sua conta de admin (a única criada fora do convite)
-npm run admin:create -- --name "Seu nome" --email voce@empresa.com --password "uma-senha-forte"
-
 # Compila o site
 npm run build
+```
+
+Depois, ligue o servidor (`npm start`) e crie a sua conta de admin em **`http://localhost:3000/primeiro-acesso`**. É a única conta criada fora do convite: o link só funciona enquanto o sistema não tem nenhuma conta e só abre na própria máquina do servidor, nunca pela rede.
+
+Se preferir pelo terminal:
+
+```bash
+npm run admin:create -- --name "Seu nome" --email voce@empresa.com --password "uma-senha-forte"
 ```
 
 ## Uso no dia a dia

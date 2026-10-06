@@ -11,6 +11,7 @@ type AuthValue = {
   can: (p: PermissionKey) => boolean
   login: (email: string, password: string) => Promise<void>
   acceptInvite: (token: string, body: { name: string; email: string; password: string }) => Promise<void>
+  setupAdmin: (body: { name: string; email: string; password: string }) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -53,6 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       acceptInvite: async (token, body) => {
         await api.post(`/api/invites/${token}/accept`, body)
+        await refresh()
+      },
+      setupAdmin: async (body) => {
+        await api.post('/api/setup', body)
         await refresh()
       },
       logout: async () => {

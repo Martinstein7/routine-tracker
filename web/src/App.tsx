@@ -7,6 +7,7 @@ import { HistoryPage } from './pages/History'
 import { InvitePage } from './pages/Invite'
 import { LoginPage } from './pages/Login'
 import { ReportsPage } from './pages/Reports'
+import { SetupPage } from './pages/Setup'
 import { SettingsPage } from './pages/Settings'
 import { TasksPage } from './pages/Tasks'
 import { TodayPage } from './pages/Today'
@@ -19,6 +20,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/convite/:token" element={me ? <Navigate to="/" replace /> : <InvitePage />} />
+      <Route path="/primeiro-acesso" element={me ? <Navigate to="/" replace /> : <SetupPage />} />
       {!me ? (
         <Route path="*" element={<LoginPage />} />
       ) : (

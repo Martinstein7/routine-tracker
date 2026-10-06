@@ -7,6 +7,7 @@ import fastifyWebsocket from '@fastify/websocket'
 import Fastify from 'fastify'
 import { ZodError } from 'zod'
 import { ensureDatabase, migrate } from './database.ts'
+import { prisma } from './db.ts'
 import { env } from './env.ts'
 import { authenticate, SESSION_COOKIE } from './lib/auth.ts'
 import { HttpError } from './lib/errors.ts'
@@ -74,3 +75,6 @@ if (existsSync(webDist)) {
 await app.listen({ port: env.port, host: env.host })
 app.log.info(`Acesso local: http://localhost:${env.port}`)
 app.log.info(`Acesso na rede: ${env.publicUrl}`)
+if ((await prisma.user.count()) === 0) {
+  app.log.info(`Nenhum admin ainda. Crie o seu em: http://localhost:${env.port}/primeiro-acesso`)
+}
