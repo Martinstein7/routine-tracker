@@ -1,10 +1,10 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { PageHeader } from '../components/Layout'
-import { Avatar, Button, Card, ConfirmButton, Empty, ErrorText, Field, inputCls, Segmented } from '../components/ui'
+import { Avatar, Button, Card, ConfirmButton, cx, Empty, ErrorText, Field, Icon, inputCls, Modal, Segmented } from '../components/ui'
 import { api, qs } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { addDays, formatClock, relativeDay, todayISO, toISO } from '../lib/format'
+import { addDays, formatClock, formatDate, relativeDay, todayISO, toISO } from '../lib/format'
 import { useIncidents, useTaskActions, useUsers } from '../lib/queries'
 import type { HistoryEvent } from '../types'
 
@@ -16,6 +16,8 @@ export function HistoryPage() {
   const [from, setFrom] = useState(addDays(today, -6))
   const [to, setTo] = useState(today)
   const [actorId, setActorId] = useState('')
+  const [clearing, setClearing] = useState(false)
+  const { can } = useAuth()
   const users = useUsers()
 
   return (
@@ -56,10 +58,91 @@ export function HistoryPage() {
             </Field>
           </div>
         )}
+        {tab === 'events' && can('admin') && (
+          <Button variant="danger" className="ml-auto" onClick={() => setClearing(true)}>
+            <Icon name="trash" className="size-3.5" />
+            Limpar histórico
+          </Button>
+        )}
       </div>
 
       {tab === 'events' ? <Events from={from} to={to} actorId={actorId} /> : <Incidents from={from} to={to} />}
+      {clearing && (
+        <ClearHistory from={from} to={to} actor={users.data?.find((u) => u.id === actorId)} onClose={() => setClearing(false)} />
+      )}
     </>
+  )
+}
+
+type ClearScope = 'filtered' | 'all'
+
+/** Apaga vários registros de uma vez: o que está filtrado na tela ou tudo. */
+function ClearHistory({ from, to, actor, onClose }: { from: string; to: string; actor?: { id: string; name: string }; onClose: () => void }) {
+  const qc = useQueryClient()
+  const [scope, setScope] = useState<ClearScope>('filtered')
+  const filters = scope === 'all' ? {} : { from, to, actorId: actor?.id }
+  const count = useQuery({
+    queryKey: ['history-count', scope, from, to, actor?.id],
+    queryFn: () => api.get<{ count: number }>(`/api/history/count${qs(filters)}`),
+    staleTime: 0,
+  })
+  const clear = useMutation({
+    mutationFn: () => api.post<{ deleted: number }>('/api/history/clear', filters),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['history'] })
+      onClose()
+    },
+  })
+  const n = count.data?.count
+  const filteredLabel = `De ${formatDate(from)} a ${formatDate(to)}${actor ? `, só de ${actor.name}` : ''}`
+
+  return (
+    <Modal
+      title="Limpar histórico"
+      onClose={onClose}
+      width="max-w-md"
+      footer={
+        <>
+          <Button onClick={onClose}>Cancelar</Button>
+          <Button
+            variant="danger"
+            className="bg-bad! text-white! hover:opacity-90"
+            disabled={!n || clear.isPending}
+            onClick={() => clear.mutate()}
+          >
+            {clear.isPending ? 'Apagando…' : n ? `Apagar ${n} registro${n === 1 ? '' : 's'}` : 'Nada para apagar'}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-[13px] font-medium">O que apagar</legend>
+          {(
+            [
+              { value: 'filtered', label: 'O que está filtrado na tela', hint: filteredLabel },
+              { value: 'all', label: 'Todo o histórico', hint: 'Todos os registros, de qualquer data e pessoa' },
+            ] as const
+          ).map((o) => (
+            <label
+              key={o.value}
+              className={cx('flex cursor-pointer gap-3 rounded-md border p-3', scope === o.value ? 'border-accent bg-accent-soft/50' : 'border-line hover:bg-canvas')}
+            >
+              <input type="radio" name="clear-scope" value={o.value} checked={scope === o.value} onChange={() => setScope(o.value)} className="mt-0.5 accent-accent" />
+              <span>
+                <span className="block text-sm font-medium">{o.label}</span>
+                <span className="block text-xs text-muted">{o.hint}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <p className="text-[13px] text-muted">
+          {count.isPending ? 'Contando registros…' : `${n ?? 0} registro${n === 1 ? '' : 's'} ser${n === 1 ? 'á apagado' : 'ão apagados'}. `}
+          Não dá para desfazer. Tarefas, comentários e imprevistos não são afetados; fica só uma linha avisando que houve a limpeza.
+        </p>
+        <ErrorText>{clear.error?.message ?? count.error?.message}</ErrorText>
+      </div>
+    </Modal>
   )
 }
 

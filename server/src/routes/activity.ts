@@ -29,6 +29,12 @@ const historyQuery = z.object({
   take: z.coerce.number().int().min(1).max(100).default(50),
 })
 
+const clearQuery = z.object({
+  from: date.optional(),
+  to: date.optional(),
+  actorId: z.string().optional(),
+})
+
 const historyPatch = z.object({
   summary: z.string().trim().min(1, 'O texto não pode ficar vazio.').max(300),
   detail: z.string().trim().max(2000).default(''),
@@ -154,5 +160,33 @@ export async function activityRoutes(app: FastifyInstance) {
     await prisma.historyEvent.delete({ where: { id: request.params.id } })
     broadcast(['history'], request.me.id)
     return { ok: true }
+  })
+
+  // Limpeza em massa: sem filtros, apaga tudo; com período e/ou pessoa, só o que bate.
+  const clearWhere = (q: z.infer<typeof clearQuery>) => {
+    const createdAt: { gte?: Date; lte?: Date } = {}
+    if (q.from) createdAt.gte = dayStart(q.from)
+    if (q.to) createdAt.lte = dayEnd(q.to)
+    return { createdAt, ...(q.actorId ? { actorId: q.actorId } : {}) }
+  }
+
+  app.get('/api/history/count', async (request) => {
+    await assertCan(request.me, 'admin')
+    return { count: await prisma.historyEvent.count({ where: clearWhere(clearQuery.parse(request.query)) }) }
+  })
+
+  app.post('/api/history/clear', async (request) => {
+    const me = request.me
+    await assertCan(me, 'admin')
+    const q = clearQuery.parse(request.body)
+    const { count } = await prisma.historyEvent.deleteMany({ where: clearWhere(q) })
+    // Fica uma linha dizendo que houve limpeza, já que a gestora também acompanha o histórico.
+    if (count > 0) {
+      const fmt = (d: string) => d.split('-').reverse().join('/')
+      const scope = q.from || q.to ? ` de ${q.from ? fmt(q.from) : 'início'} a ${q.to ? fmt(q.to) : 'hoje'}` : ''
+      await record({ actorId: me.id, action: 'history.cleared', summary: `${me.name} limpou o histórico${scope}`, detail: `${count} registro${count === 1 ? '' : 's'} apagado${count === 1 ? '' : 's'}` })
+    }
+    broadcast(['history'], me.id)
+    return { deleted: count }
   })
 }
