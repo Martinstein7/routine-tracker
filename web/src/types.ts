@@ -56,9 +56,13 @@ export type OnDemandActivity = {
   lastTime: string | null
 }
 
+export type BlockRepeat = 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'YEARLY'
+export type BlockRule = { id: string; reason: string; pattern: BlockRepeat; startDate: string; endDate: string | null }
+
 export type BlockedDays = {
   weekends: boolean
   days: { date: string; reason: string; createdBy: string }[]
+  rules: BlockRule[]
 }
 
 export type Comment = { id: string; taskId: string; body: string; createdAt: string; author: UserSummary }

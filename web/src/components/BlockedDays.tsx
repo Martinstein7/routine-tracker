@@ -1,11 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { api, qs } from '../lib/api'
-import { formatDate, formatWeekday, todayISO } from '../lib/format'
+import { formatDate, formatWeekday, parseISO, todayISO } from '../lib/format'
 import { useBlockedDays, useTaskActions } from '../lib/queries'
+import type { BlockRepeat } from '../types'
 import { Button, Card, cx, Empty, ErrorText, Field, inputCls } from './ui'
 
 const REASONS = ['Consulta', 'Feriado', 'Folga', 'Férias', 'Outro'] as const
+
+const weekdayLong = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' })
+
+/** "Toda quarta-feira", "A cada 2 semanas, na segunda-feira", "Todo dia 10", "Todo ano em 25/12". */
+export function describeRepeat(pattern: BlockRepeat, startDate: string) {
+  const name = weekdayLong.format(parseISO(startDate))
+  const every = parseISO(startDate).getDay() % 6 === 0 ? 'Todo' : 'Toda' // sábado e domingo são masculinos
+  if (pattern === 'WEEKLY') return `${every} ${name}`
+  if (pattern === 'BIWEEKLY') return `A cada 2 semanas, ${parseISO(startDate).getDay() % 6 === 0 ? 'no' : 'na'} ${name}`
+  if (pattern === 'MONTHLY') return `Todo dia ${Number(startDate.slice(8))}`
+  return `Todo ano em ${formatDate(startDate).slice(0, 5)}`
+}
 
 /** Só o admin: bloqueia dias para rotina (um dia, um período ou todos os fins de semana). */
 export function BlockedDaysCard() {
@@ -14,6 +27,7 @@ export function BlockedDaysCard() {
   const actions = useTaskActions()
   const [from, setFrom] = useState(today)
   const [to, setTo] = useState('')
+  const [repeat, setRepeat] = useState<BlockRepeat | 'NONE'>('NONE')
   const [reason, setReason] = useState<(typeof REASONS)[number]>('Consulta')
   const [other, setOther] = useState('')
   const [removeTasks, setRemoveTasks] = useState(true)
@@ -21,15 +35,18 @@ export function BlockedDaysCard() {
   const [error, setError] = useState('')
   const [done, setDone] = useState('')
 
-  const end = to && to >= from ? to : from
+  const repeating = repeat !== 'NONE'
+  // Sem repetição, "Até" fecha o período (vazio = um dia); com repetição, é até quando repetir (vazio = sem fim).
+  const end = to && to >= from ? to : repeating ? undefined : from
   const impact = useQuery({
-    queryKey: ['blocked-impact', from, end],
-    queryFn: () => api.get<{ manual: number; recurring: number }>(`/api/blocked-days/impact${qs({ from, to: end })}`),
+    queryKey: ['blocked-impact', from, end, repeat],
+    queryFn: () => api.get<{ manual: number; recurring: number }>(`/api/blocked-days/impact${qs({ from, to: end, repeat })}`),
     enabled: !!from,
     staleTime: 0,
   })
 
   const days = blocked.data?.days ?? []
+  const rules = (blocked.data?.rules ?? []).filter((r) => !r.endDate || r.endDate >= today)
   const upcoming = days.filter((d) => d.date >= today)
   const past = days.filter((d) => d.date < today).reverse()
   const finalReason = reason === 'Outro' ? other.trim() : reason
@@ -39,12 +56,11 @@ export function BlockedDaysCard() {
     setError('')
     setDone('')
     try {
-      const r = await actions.blockDays.mutateAsync({ from, to: end, reason: finalReason, removeTasks })
-      setDone(
-        `${r.blocked === 1 ? 'Dia bloqueado' : `${r.blocked} dias bloqueados`}` +
-          (r.removedTasks ? ` · ${r.removedTasks} tarefa${r.removedTasks === 1 ? '' : 's'} removida${r.removedTasks === 1 ? '' : 's'}.` : '.'),
-      )
+      const r = await actions.blockDays.mutateAsync({ from, to: end, repeat, reason: finalReason, removeTasks })
+      const what = r.repeating ? `Bloqueio criado: ${describeRepeat(repeat as BlockRepeat, from).toLowerCase()}` : r.blocked === 1 ? 'Dia bloqueado' : `${r.blocked} dias bloqueados`
+      setDone(what + (r.removedTasks ? ` · ${r.removedTasks} tarefa${r.removedTasks === 1 ? '' : 's'} removida${r.removedTasks === 1 ? '' : 's'}.` : '.'))
       setTo('')
+      setRepeat('NONE')
       setOther('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível bloquear.')
@@ -83,10 +99,23 @@ export function BlockedDaysCard() {
             <Field label="De" htmlFor="block-from">
               <input id="block-from" type="date" required value={from} onChange={(e) => setFrom(e.target.value)} className={inputCls} />
             </Field>
-            <Field label="Até" htmlFor="block-to" hint="Vazio = só um dia.">
+            <Field label={repeating ? 'Repetir até' : 'Até'} htmlFor="block-to" hint={repeating ? 'Vazio = sem data para acabar.' : 'Vazio = só um dia.'}>
               <input id="block-to" type="date" min={from} value={to} onChange={(e) => setTo(e.target.value)} className={inputCls} />
             </Field>
           </div>
+          <Field label="Repetir" htmlFor="block-repeat">
+            <select id="block-repeat" value={repeat} onChange={(e) => setRepeat(e.target.value as BlockRepeat | 'NONE')} className={inputCls}>
+              <option value="NONE">Não repetir</option>
+              {from && (
+                <>
+                  <option value="WEEKLY">Toda semana ({weekdayLong.format(parseISO(from))})</option>
+                  <option value="BIWEEKLY">A cada 2 semanas ({weekdayLong.format(parseISO(from))})</option>
+                  <option value="MONTHLY">Todo mês (dia {Number(from.slice(8))})</option>
+                  <option value="YEARLY">Todo ano ({formatDate(from).slice(0, 5)})</option>
+                </>
+              )}
+            </select>
+          </Field>
           <Field label="Motivo" htmlFor="block-reason">
             <select id="block-reason" value={reason} onChange={(e) => setReason(e.target.value as (typeof REASONS)[number])} className={inputCls}>
               {REASONS.map((r) => (
@@ -107,7 +136,8 @@ export function BlockedDaysCard() {
               <p>
                 Já existe{impact.data.manual + impact.data.recurring === 1 ? '' : 'm'} {impact.data.manual + impact.data.recurring} tarefa
                 {impact.data.manual + impact.data.recurring === 1 ? '' : 's'} em aberto nesse período.
-                {impact.data.recurring > 0 && ` As ${impact.data.recurring} recorrentes saem e voltam sozinhas se você desbloquear.`}
+                {impact.data.recurring === 1 && ' A recorrente sai e volta sozinha se você desbloquear.'}
+                {impact.data.recurring > 1 && ` As ${impact.data.recurring} recorrentes saem e voltam sozinhas se você desbloquear.`}
               </p>
               {impact.data.manual > 0 && (
                 <label className="mt-1.5 flex items-center gap-2">
@@ -122,10 +152,34 @@ export function BlockedDaysCard() {
           {done && <p className="text-[13px] text-ok">{done}</p>}
           <div>
             <Button type="submit" variant="primary" disabled={actions.blockDays.isPending || (reason === 'Outro' && !other.trim())}>
-              {actions.blockDays.isPending ? 'Bloqueando…' : end !== from ? 'Bloquear período' : 'Bloquear dia'}
+              {actions.blockDays.isPending ? 'Bloqueando…' : repeating ? 'Bloquear repetindo' : end !== from ? 'Bloquear período' : 'Bloquear dia'}
             </Button>
           </div>
         </form>
+
+        {rules.length > 0 && (
+          <div>
+            <p className="mb-2 text-sm font-medium">Bloqueios que se repetem</p>
+            <ul className="divide-y divide-line rounded-md border border-line">
+              {rules.map((r) => (
+                <li key={r.id} className="flex items-center gap-3 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm">
+                      {describeRepeat(r.pattern, r.startDate)} · {r.reason}
+                    </p>
+                    <p className="text-xs text-muted tabular">
+                      Desde {formatDate(r.startDate)}
+                      {r.endDate ? ` até ${formatDate(r.endDate)}` : ', sem data para acabar'}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="ghost" disabled={actions.removeBlockRule.isPending} onClick={() => actions.removeBlockRule.mutate(r.id)}>
+                    Remover
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div>
           <p className="mb-2 text-sm font-medium">Próximos dias bloqueados</p>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import type { BlockedDays, Category, Comment, Incident, OnDemandActivity, Recurrence, Task, TaskStatus, User } from '../types'
+import type { BlockedDays, BlockRepeat, BlockRule, Category, Comment, Incident, OnDemandActivity, Recurrence, Task, TaskStatus, User } from '../types'
 import { api, qs } from './api'
 import { parseISO } from './format'
 
@@ -28,10 +28,27 @@ export function useBlockedDays() {
   const reasonOf = (date: string): string | undefined => {
     const explicit = byDate.get(date)
     if (explicit) return explicit
+    const rule = query.data?.rules.find((r) => blockRuleOccurs(r, date))
+    if (rule) return rule.reason
     const wd = parseISO(date).getDay()
     return query.data?.weekends && (wd === 0 || wd === 6) ? 'Fim de semana' : undefined
   }
   return { ...query, reasonOf }
+}
+
+const dayNumber = (date: string) => {
+  const [y, m, d] = date.split('-').map(Number)
+  return Date.UTC(y, m - 1, d) / 86_400_000
+}
+
+/** Mesma regra do servidor (lib/blocked.ts): a repetição cai nesta data? */
+export function blockRuleOccurs(rule: Pick<BlockRule, 'pattern' | 'startDate' | 'endDate'>, date: string): boolean {
+  if (date < rule.startDate || (rule.endDate && date > rule.endDate)) return false
+  const diff = dayNumber(date) - dayNumber(rule.startDate)
+  if (rule.pattern === 'WEEKLY') return diff % 7 === 0
+  if (rule.pattern === 'BIWEEKLY') return diff % 14 === 0
+  if (rule.pattern === 'MONTHLY') return date.slice(8) === rule.startDate.slice(8)
+  return date.slice(5) === rule.startDate.slice(5)
 }
 
 /** Modo demonstração (npm run demo): sem login, dados fictícios que voltam ao padrão sozinhos. */
@@ -119,11 +136,12 @@ export function useTaskActions() {
     }),
     removeOnDemand: useMutation({ mutationFn: (id: string) => api.del(`/api/on-demand/${id}`), ...opts }),
     blockDays: useMutation({
-      mutationFn: (body: { from: string; to?: string; reason: string; removeTasks: boolean }) =>
-        api.post<{ blocked: number; removedTasks: number }>('/api/blocked-days', body),
+      mutationFn: (body: { from: string; to?: string; repeat: BlockRepeat | 'NONE'; reason: string; removeTasks: boolean }) =>
+        api.post<{ blocked: number | null; repeating: boolean; removedTasks: number }>('/api/blocked-days', body),
       ...opts,
     }),
     unblockDay: useMutation({ mutationFn: (date: string) => api.del(`/api/blocked-days/${date}`), ...opts }),
+    removeBlockRule: useMutation({ mutationFn: (id: string) => api.del(`/api/blocked-days/rules/${id}`), ...opts }),
     setWeekendsBlocked: useMutation({ mutationFn: (enabled: boolean) => api.put('/api/blocked-days/weekends', { enabled }), ...opts }),
     logOnDemand: useMutation({
       mutationFn: ({ id, mode }: { id: string; mode: 'start' | 'done' }) => api.post<Task>(`/api/on-demand/${id}/log`, { mode }),

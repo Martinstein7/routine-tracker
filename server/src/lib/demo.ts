@@ -105,6 +105,7 @@ export async function seedDemo() {
     prisma.invite.deleteMany(),
     prisma.managerPermission.deleteMany(),
     prisma.blockedDay.deleteMany(),
+    prisma.blockRule.deleteMany(),
     prisma.setting.deleteMany(),
     prisma.user.deleteMany(),
     prisma.category.deleteMany(),

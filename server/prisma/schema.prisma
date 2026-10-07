@@ -54,6 +54,7 @@ model User {
   events         HistoryEvent[]
   invitesCreated Invite[]
   blockedDays    BlockedDay[]
+  blockRules     BlockRule[]
 }
 
 // Link de criação de conta. Só o hash do token fica salvo.
@@ -210,6 +211,26 @@ model BlockedDay {
   createdById String
   createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+}
+
+enum BlockRepeat {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// Bloqueio que se repete a partir de startDate: mesmo dia da semana (toda semana ou a cada 2),
+// mesmo dia do mês ou mesma data do ano. endDate vazio = sem data para acabar.
+model BlockRule {
+  id          String      @id @default(cuid())
+  reason      String
+  pattern     BlockRepeat
+  startDate   String
+  endDate     String?
+  createdById String
+  createdBy   User        @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
 }
 
 // Ajustes gerais do sistema, como "bloquear fins de semana".
