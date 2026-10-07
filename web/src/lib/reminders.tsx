@@ -56,7 +56,7 @@ type ReminderValue = {
   setPrefs: (p: Partial<Prefs>) => void
   permission: NotificationPermission | 'unsupported'
   requestPermission: () => Promise<void>
-  test: () => void
+  test: () => Promise<string>
   today: Reminder[] // lembretes de hoje que já chegaram, do mais recente para o mais antigo
   unread: number // avisos que de fato dispararam e ainda não foram vistos no sino
   markSeen: () => void
@@ -141,7 +141,21 @@ export function ReminderProvider({ children }: { children: ReactNode }) {
       if (!desktopSupported()) return
       setPermission(await Notification.requestPermission())
     },
-    test: () => notify('Teste do Routine Tracker', 'Assim aparecem os lembretes das suas tarefas.', 'rt-test'),
+    // Teste com diagnóstico: diz o que impediu, ou se o navegador entregou o aviso ao Windows.
+    test: () =>
+      new Promise<string>((resolve) => {
+        if (!desktopSupported()) return resolve('Este endereço não permite notificações. Abra por http://localhost:3000.')
+        if (Notification.permission !== 'granted') return resolve(`O navegador ainda não deu permissão (estado: ${Notification.permission}).`)
+        try {
+          const n = new Notification('Teste do Routine Tracker', { body: 'Assim aparecem os lembretes das suas tarefas.', tag: 'rt-test', icon: '/favicon.svg' })
+          n.onshow = () =>
+            resolve('O navegador entregou o aviso ao Windows. Se nada apareceu no canto da tela, o Windows está segurando: veja o "Não perturbe" e as notificações do navegador nas configurações do Windows.')
+          n.onerror = () => resolve('O navegador recusou mostrar o aviso. Confira a permissão de notificações deste site no navegador.')
+          window.setTimeout(() => resolve('O navegador não respondeu. Confira as notificações do navegador nas configurações do Windows.'), 5000)
+        } catch (e) {
+          resolve(`Erro ao criar o aviso: ${e instanceof Error ? e.message : e}`)
+        }
+      }),
     today,
     unread,
     markSeen: () => {

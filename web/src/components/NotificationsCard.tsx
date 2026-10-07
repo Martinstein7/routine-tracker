@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useReminders, type Lead } from '../lib/reminders'
 import { Button, Card, cx, Segmented } from './ui'
 
@@ -20,6 +21,8 @@ function Switch({ id, checked, onChange, disabled }: { id: string; checked: bool
 /** Lembretes de horário das tarefas: antecedência e notificações do Windows. Vale para este navegador. */
 export function NotificationsCard() {
   const { prefs, setPrefs, permission, requestPermission, test } = useReminders()
+  const [testing, setTesting] = useState(false)
+  const [result, setResult] = useState('')
 
   return (
     <Card title="Notificações">
@@ -77,10 +80,26 @@ export function NotificationsCard() {
                     <Switch id="rem-desktop" checked={prefs.desktop} onChange={(desktop) => setPrefs({ desktop })} />
                   </div>
                   {prefs.desktop && (
-                    <div>
-                      <Button size="sm" onClick={test}>
-                        Enviar notificação de teste
-                      </Button>
+                    <div className="flex flex-col gap-2">
+                      <div>
+                        <Button
+                          size="sm"
+                          disabled={testing}
+                          onClick={async () => {
+                            setTesting(true)
+                            setResult('')
+                            setResult(await test())
+                            setTesting(false)
+                          }}
+                        >
+                          {testing ? 'Enviando…' : 'Enviar notificação de teste'}
+                        </Button>
+                      </div>
+                      {result && (
+                        <p role="status" className="rounded-md bg-canvas px-3 py-2 text-[13px]">
+                          {result}
+                        </p>
+                      )}
                     </div>
                   )}
                 </>
