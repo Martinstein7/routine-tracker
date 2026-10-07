@@ -137,6 +137,15 @@ Um único comando liga o banco e o servidor. O terminal mostra os dois endereço
 
 Para convidar a gestora, entre como admin, abra **Configurações → Convidar pessoa**, escolha **Gestora** e envie o link gerado. O link usa o IP da sua máquina, vale por 7 dias e funciona uma única vez.
 
+### Ligar sem abrir o terminal
+
+Na pasta do projeto há dois arquivos de dois cliques (dá para criar atalhos deles na Área de Trabalho):
+
+- **Ligar Routine Tracker.vbs** liga o banco e o servidor em segundo plano, sem janela, e avisa com o endereço quando estiver pronto.
+- **Desligar Routine Tracker.vbs** desliga com segurança: o banco primeiro, depois o servidor.
+
+Sem janela, o que o servidor escreveria na tela vai para `server/servidor.log`.
+
 ### Acesso pela rede
 
 - Na primeira vez que o servidor ligar, o Windows pode perguntar se o Node.js pode usar a rede. Permita em **redes privadas**.
