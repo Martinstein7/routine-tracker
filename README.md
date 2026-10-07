@@ -219,5 +219,5 @@ Os dados ficam em `server/.pgdata` (fora do Git). Para backup, use **Configuraç
 ## Roadmap
 
 - **V1 · Essencial** ✅ login por convite, rotina do dia, tarefas, status com cronômetro, histórico, calendário semanal e mensal.
-- **V2 · Intermediário** ✅ comentários, imprevistos, métricas e relatórios, permissões configuráveis, tarefas recorrentes. Pendente: notificações (o sino).
+- **V2 · Intermediário** ✅ comentários, imprevistos, métricas e relatórios, permissões configuráveis, tarefas recorrentes, lembretes de horário (sino e notificação do Windows, com o site aberto).
 - **V3 · Avançado:** criar/editar relatórios personalizados, integrações, logs do sistema.

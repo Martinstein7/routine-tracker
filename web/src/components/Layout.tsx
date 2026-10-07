@@ -3,6 +3,8 @@ import { useAuth, useMe } from '../lib/auth'
 import { formatClock, roleLabel } from '../lib/format'
 import { useDemo } from '../lib/queries'
 import { useRealtime } from '../lib/realtime'
+import { ReminderProvider } from '../lib/reminders'
+import { Bell } from './Bell'
 import { Brand } from './Brand'
 import { Avatar, cx, Icon } from './ui'
 
@@ -27,7 +29,16 @@ function DemoBanner({ resetAt }: { resetAt: string | null }) {
   )
 }
 
+// Os lembretes de horário rodam enquanto qualquer página logada estiver aberta.
 export function Layout() {
+  return (
+    <ReminderProvider>
+      <Shell />
+    </ReminderProvider>
+  )
+}
+
+function Shell() {
   const me = useMe()
   const { logout } = useAuth()
   const connected = useRealtime()
@@ -41,14 +52,17 @@ export function Layout() {
     <div className="flex min-h-full flex-col">
       {demo?.demo && <DemoBanner resetAt={demo.resetAt} />}
       <div className="flex flex-1 flex-col lg:flex-row">
-        <aside className="border-b border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-56 lg:shrink-0 lg:flex-col lg:border-r lg:border-b-0">
+        <aside className="relative z-20 border-b border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-56 lg:shrink-0 lg:flex-col lg:border-r lg:border-b-0">
           <div className="flex items-center justify-between px-4 py-3 lg:px-5 lg:py-5">
             <Brand />
-            {canLogout && (
-              <button type="button" onClick={logout} className="rounded p-1.5 text-muted hover:bg-canvas hover:text-ink lg:hidden" aria-label="Sair">
-                <Icon name="logout" />
-              </button>
-            )}
+            <div className="flex items-center gap-1">
+              <Bell />
+              {canLogout && (
+                <button type="button" onClick={logout} className="rounded p-1.5 text-muted hover:bg-canvas hover:text-ink lg:hidden" aria-label="Sair">
+                  <Icon name="logout" />
+                </button>
+              )}
+            </div>
           </div>
           <nav aria-label="Principal" className="flex gap-1 overflow-x-auto px-3 pb-2 lg:flex-1 lg:flex-col lg:overflow-visible lg:pb-0">
             {items.map((item) => (

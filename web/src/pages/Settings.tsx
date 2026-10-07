@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent } from 'react'
 import { BlockedDaysCard } from '../components/BlockedDays'
 import { PageHeader } from '../components/Layout'
+import { NotificationsCard } from '../components/NotificationsCard'
 import { Avatar, Button, Card, ConfirmButton, cx, ErrorText, Field, Icon, inputCls, Segmented } from '../components/ui'
 import { api } from '../lib/api'
 import { useAuth, useMe } from '../lib/auth'
@@ -12,23 +13,25 @@ import type { Category, Invite, Role } from '../types'
 
 export function SettingsPage() {
   const { can } = useAuth()
-  // A gestora só vê a aparência, que é pessoal; o resto é do admin.
+  // A gestora só vê o que é pessoal (aparência e notificações); o resto é do admin.
   if (!can('admin')) {
     return (
       <>
-        <PageHeader title="Configurações" subtitle="Aparência da interface para a sua conta." />
-        <div className="max-w-2xl">
+        <PageHeader title="Configurações" subtitle="Aparência e notificações da sua conta." />
+        <div className="flex max-w-2xl flex-col gap-6">
           <Appearance />
+          <NotificationsCard />
         </div>
       </>
     )
   }
   return (
     <>
-      <PageHeader title="Configurações" subtitle="Aparência, dias bloqueados, acessos, permissões da gestora e categorias." />
+      <PageHeader title="Configurações" subtitle="Aparência, notificações, dias bloqueados, acessos, permissões da gestora e categorias." />
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-6">
           <Appearance />
+          <NotificationsCard />
           <Users />
           <Invites />
         </div>
