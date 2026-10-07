@@ -18,7 +18,12 @@ function lanAddress(): string | undefined {
 }
 
 const port = Number(process.env.PORT ?? 3000)
-const publicUrl = process.env.PUBLIC_URL || `http://${lanAddress() ?? 'localhost'}:${port}`
+// Endereço público: o definido no .env; senão o que a hospedagem informa (Render, Railway); senão o IP na rede.
+const publicUrl =
+  process.env.PUBLIC_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  (process.env.RAILWAY_PUBLIC_DOMAIN && `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`) ||
+  `http://${lanAddress() ?? 'localhost'}:${port}`
 
 export const env = {
   databaseUrl: required('DATABASE_URL'),

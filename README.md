@@ -155,23 +155,23 @@ Sem janela, o que o servidor escreveria na tela vai para `server/servidor.log`.
   ```
 - Se o IP da sua máquina mudar com frequência, peça um IP fixo para a TI ou defina `PUBLIC_URL` em `server/.env` (por exemplo, `PUBLIC_URL=http://192.168.0.50:3000`).
 
-### Publicar na nuvem (Railway)
+### Publicar na nuvem (gratuito: Render + Neon)
 
-O projeto já vem pronto para o [Railway](https://railway.com) (`railway.json`): ele compila o site, aplica as migrações e liga o servidor, verificando `/api/health`.
+O site fica no [Render](https://render.com) (endereço gratuito `*.onrender.com`) e o banco no [Neon](https://neon.tech) (PostgreSQL gratuito). O `render.yaml` já descreve tudo: compila o site, aplica as migrações, liga o servidor e verifica `/api/health`. O endereço público e o HTTPS vêm do próprio Render.
 
-1. Crie um projeto no Railway com **Deploy from GitHub repo** (este repositório) e adicione um banco **PostgreSQL** ao projeto.
-2. No serviço do site, em **Variables**, defina:
-   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (referência ao banco do projeto)
-   - `EMBEDDED_DB` = `false`
-   - `JWT_SECRET` = um texto longo e aleatório
-   - `TRUST_PROXY` = `true`
-   - `PUBLIC_URL` = o endereço final, com `https://` (ex.: `https://rotina.seudominio.com.br`)
-3. Em **Settings → Networking**, gere o endereço `*.up.railway.app` ou conecte o seu domínio (o Railway mostra o registro DNS para criar no registro.br e emite o HTTPS sozinho).
-4. Para levar os dados que já existem na sua máquina, pegue a URL **pública** do banco (aba **Connect** do PostgreSQL) e rode, com o servidor local desligado:
+1. **Banco (Neon):** crie um projeto e copie a *connection string* **direta** (a que **não** tem `-pooler` no endereço).
+2. **Site (Render):** **New → Blueprint**, escolha este repositório e, quando pedir, cole a connection string do Neon em `DATABASE_URL`. O resto (`EMBEDDED_DB=false`, `TRUST_PROXY=true` e um `JWT_SECRET` aleatório) já vem do `render.yaml`.
+3. **Seus dados atuais:** com o servidor local desligado, rode na sua máquina:
    ```bash
-   npm run data:copy -w server -- "postgresql://…url-publica-do-railway…"
+   npm run data:copy -w server -- "postgresql://…connection-string-do-neon…"
    ```
-   A cópia só roda num banco vazio e grava tudo de uma vez (ou nada). Sem dados para levar, crie o admin pelo terminal do Railway com `npm run admin:create`.
+   A cópia só roda num banco vazio e grava tudo de uma vez (ou nada). Sem dados para levar, crie o admin no **Shell** do Render com `npm run admin:create`.
+
+No plano gratuito o Render "dorme" depois de ~15 minutos sem acesso; o primeiro acesso depois disso leva de 30 s a 1 min.
+
+**Alternativa paga (Railway, ~US$ 5/mês, não dorme):** o `railway.json` já está pronto. Crie o projeto com **Deploy from GitHub repo**, adicione um **PostgreSQL** e defina `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `EMBEDDED_DB=false`, `TRUST_PROXY=true` e `JWT_SECRET`. Gere o endereço em **Settings → Networking** e copie os dados com o mesmo `data:copy`, usando a URL pública do banco.
+
+Para um domínio próprio em qualquer um dos dois, basta conectá-lo nas configurações do serviço; com um domínio próprio, defina também `PUBLIC_URL=https://seu-dominio`.
 
 ### Demonstração (para apresentar o projeto)
 
