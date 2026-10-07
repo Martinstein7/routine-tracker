@@ -155,6 +155,24 @@ Sem janela, o que o servidor escreveria na tela vai para `server/servidor.log`.
   ```
 - Se o IP da sua máquina mudar com frequência, peça um IP fixo para a TI ou defina `PUBLIC_URL` em `server/.env` (por exemplo, `PUBLIC_URL=http://192.168.0.50:3000`).
 
+### Publicar na nuvem (Railway)
+
+O projeto já vem pronto para o [Railway](https://railway.com) (`railway.json`): ele compila o site, aplica as migrações e liga o servidor, verificando `/api/health`.
+
+1. Crie um projeto no Railway com **Deploy from GitHub repo** (este repositório) e adicione um banco **PostgreSQL** ao projeto.
+2. No serviço do site, em **Variables**, defina:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (referência ao banco do projeto)
+   - `EMBEDDED_DB` = `false`
+   - `JWT_SECRET` = um texto longo e aleatório
+   - `TRUST_PROXY` = `true`
+   - `PUBLIC_URL` = o endereço final, com `https://` (ex.: `https://rotina.seudominio.com.br`)
+3. Em **Settings → Networking**, gere o endereço `*.up.railway.app` ou conecte o seu domínio (o Railway mostra o registro DNS para criar no registro.br e emite o HTTPS sozinho).
+4. Para levar os dados que já existem na sua máquina, pegue a URL **pública** do banco (aba **Connect** do PostgreSQL) e rode, com o servidor local desligado:
+   ```bash
+   npm run data:copy -w server -- "postgresql://…url-publica-do-railway…"
+   ```
+   A cópia só roda num banco vazio e grava tudo de uma vez (ou nada). Sem dados para levar, crie o admin pelo terminal do Railway com `npm run admin:create`.
+
 ### Demonstração (para apresentar o projeto)
 
 ```bash

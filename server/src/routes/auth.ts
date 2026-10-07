@@ -59,6 +59,7 @@ export async function authRoutes(app: FastifyInstance) {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
+      secure: env.secureCookies,
       maxAge: SESSION_DAYS * 24 * 60 * 60,
     })
   }

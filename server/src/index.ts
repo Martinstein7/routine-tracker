@@ -30,7 +30,7 @@ if (env.demo) {
   await seedDemo()
 }
 
-const app = Fastify({ logger: { level: 'info' } })
+const app = Fastify({ logger: { level: 'info' }, trustProxy: env.trustProxy })
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {

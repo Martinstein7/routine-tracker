@@ -18,6 +18,7 @@ function lanAddress(): string | undefined {
 }
 
 const port = Number(process.env.PORT ?? 3000)
+const publicUrl = process.env.PUBLIC_URL || `http://${lanAddress() ?? 'localhost'}:${port}`
 
 export const env = {
   databaseUrl: required('DATABASE_URL'),
@@ -28,5 +29,9 @@ export const env = {
   // Demonstração: entra sem login, com dados fictícios num banco à parte (ver src/demo.ts).
   demo: process.env.DEMO === 'true',
   pgDataDir: process.env.PG_DATA_DIR ?? '.pgdata',
-  publicUrl: process.env.PUBLIC_URL || `http://${lanAddress() ?? 'localhost'}:${port}`,
+  publicUrl,
+  // Na nuvem o site fica atrás do proxy da hospedagem: confiar nele para saber o IP real de quem acessa.
+  trustProxy: process.env.TRUST_PROXY === 'true',
+  // Com endereço https, o cookie de login só trafega por conexão segura.
+  secureCookies: publicUrl.startsWith('https://'),
 }
